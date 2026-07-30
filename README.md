@@ -7,6 +7,8 @@ Bitcoin-Wallet-Struktur unterhalb des Investmentkontos ab.
 
 Reines HTML/CSS/JavaScript ohne Abhängigkeiten und ohne Build-Schritt.
 
+**Live:** https://kontenmodell-5ocg.vercel.app
+
 ## Start
 
 `index.html` im Browser öffnen – entweder direkt per Doppelklick oder über einen
@@ -99,7 +101,7 @@ lesbar. Der Lade-Dialog akzeptiert auch unverschlüsselte JSON-Exporte.
 ## Veröffentlichen (Vercel)
 
 Das Repository ist bei Vercel eingebunden: Jeder Push auf `main` wird
-automatisch ausgeliefert. Gebaut wird nichts – `vercel.json` schaltet den
+automatisch unter https://kontenmodell-5ocg.vercel.app ausgeliefert. Gebaut wird nichts – `vercel.json` schaltet den
 Build-Schritt ab und liefert die Dateien unverändert aus. Zwei Kopfzeilen sind
 dabei wichtig:
 

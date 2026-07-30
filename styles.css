@@ -348,8 +348,8 @@ input[disabled] { opacity: .45; }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
 
 .icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   background: transparent;
   color: var(--text-dim);
@@ -712,9 +712,9 @@ input[disabled] { opacity: .45; }
   input.note { font-size: 16px; padding: 6px 10px; }
 
   /* Fingerfreundliche Trefferflächen für ✕ und ? */
-  .icon { width: 40px; height: 40px; font-size: 16px; }
+  .icon { width: 44px; height: 44px; font-size: 17px; }
   .hint-dot { width: 32px; height: 32px; font-size: 15px; }
-  .swatch { height: 40px; }
+  .swatch { height: 44px; }
 }
 
 /* ---------- Mobil ---------- */

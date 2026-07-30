@@ -732,6 +732,7 @@ document.addEventListener('click', (event) => {
 
   if (action === 'remove-bucket') {
     const id = event.target.closest('.bucket')?.dataset.id;
+    if (!darfLoeschen('Konto', bucketById(id))) return;
     state.buckets = state.buckets.filter((b) => b.id !== id);
     save();
     renderRows();
@@ -754,6 +755,7 @@ document.addEventListener('click', (event) => {
 
   if (action === 'remove-wallet') {
     const id = event.target.closest('.wallet')?.dataset.id;
+    if (!darfLoeschen('Wallet', walletById(id))) return;
     btc().wallets = btc().wallets.filter((w) => w.id !== id);
     save();
     renderBitcoinRows();
@@ -769,6 +771,7 @@ document.addEventListener('click', (event) => {
 
   if (action === 'remove-fixed') {
     const id = event.target.closest('.fixed-row')?.dataset.id;
+    if (!darfLoeschen('Position', fixedById(id))) return;
     state.fixedCosts = state.fixedCosts.filter((f) => f.id !== id);
     save();
     renderRows();
@@ -1183,6 +1186,20 @@ function toast(message) {
   toastEl.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { toastEl.hidden = true; }, 4000);
+}
+
+/* ---------- Einzelne Zeilen löschen ---------- */
+
+/** Eine gerade angelegte, noch leere Zeile fragt nicht nach – da geht nichts verloren. */
+const istLeer = (item) =>
+  !String(item.name ?? '').trim() &&
+  !String(item.note ?? '').trim() &&
+  !(item.value || item.amount);
+
+function darfLoeschen(art, item) {
+  if (!item || istLeer(item)) return true;
+  const name = String(item.name ?? '').trim();
+  return confirm(name ? `${art} „${name}" wirklich löschen?` : `${art} wirklich löschen?`);
 }
 
 /* ---------- Alles löschen ---------- */

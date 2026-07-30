@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kontenmodell – Einkommensaufteilung</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <h1>Kontenmodell</h1>
+      <div class="income">
+        <label for="income">Monatliches Nettoeinkommen</label>
+        <div class="income-field">
+          <input id="income" type="text" inputmode="decimal" autocomplete="off">
+          <span class="unit">€</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card summary" aria-labelledby="summary-title">
+      <h2 id="summary-title">Übersicht</h2>
+
+      <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+
+      <dl class="totals">
+        <div>
+          <dt>Zugeteilt</dt>
+          <dd data-role="total-allocated">–</dd>
+        </div>
+        <div>
+          <dt>Fixkosten (monatlich)</dt>
+          <dd data-role="total-fixed">–</dd>
+        </div>
+        <div>
+          <dt data-role="rest-label">Nicht zugeteilt</dt>
+          <dd data-role="total-rest">–</dd>
+        </div>
+        <div>
+          <dt>Fixkostenquote</dt>
+          <dd data-role="fixed-rate">–</dd>
+        </div>
+      </dl>
+
+      <p class="hint" data-role="warning" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="buckets-title">
+      <div class="card-head">
+        <h2 id="buckets-title">Konten</h2>
+        <button type="button" class="btn" data-action="add-bucket">+ Konto</button>
+      </div>
+
+      <div class="table buckets" id="buckets">
+        <div class="row head" aria-hidden="true">
+          <span>Konto</span>
+          <span>Modus</span>
+          <span>Wert</span>
+          <span class="num">pro Monat</span>
+          <span class="num">pro Jahr</span>
+          <span></span>
+        </div>
+        <div id="bucket-rows"></div>
+      </div>
+
+      <p class="hint">
+        <strong>Prozent</strong> = Anteil vom Einkommen · <strong>Fester Betrag</strong> = feste Summe ·
+        <strong>Fixkosten</strong> = Summe aller Fixkosten unten · <strong>Rest</strong> = was übrig bleibt.
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="fixed-title">
+      <div class="card-head">
+        <h2 id="fixed-title">Fixkosten</h2>
+        <button type="button" class="btn" data-action="add-fixed">+ Position</button>
+      </div>
+
+      <div class="table fixed" id="fixed">
+        <div class="row head" aria-hidden="true">
+          <span>Position</span>
+          <span class="num">Betrag</span>
+          <span>Turnus</span>
+          <span class="num">pro Monat</span>
+          <span></span>
+        </div>
+        <div id="fixed-rows"></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="data-title">
+      <div class="card-head">
+        <h2 id="data-title">Daten</h2>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" data-action="export">Als JSON exportieren</button>
+        <button type="button" class="btn" data-action="import">JSON importieren</button>
+        <button type="button" class="btn danger" data-action="reset">Zurücksetzen</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <p class="hint">Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.</p>
+    </section>
+  </main>
+
+  <template id="tpl-bucket">
+    <div class="row bucket">
+      <span class="name-cell">
+        <span class="swatch" data-role="swatch"></span>
+        <span class="name-stack">
+          <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
+          <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
+        </span>
+      </span>
+      <span>
+        <select data-field="mode">
+          <option value="percent">Prozent</option>
+          <option value="fixed">Fester Betrag</option>
+          <option value="linked">Fixkosten</option>
+          <option value="rest">Rest</option>
+        </select>
+      </span>
+      <span class="value-cell">
+        <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
+        <span class="unit" data-role="value-unit"></span>
+      </span>
+      <span class="num" data-role="monthly">–</span>
+      <span class="num muted" data-role="yearly">–</span>
+      <span class="row-actions">
+        <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
+      </span>
+    </div>
+  </template>
+
+  <template id="tpl-fixed">
+    <div class="row fixed-row">
+      <span><input type="text" data-field="name" placeholder="Bezeichnung" autocomplete="off"></span>
+      <span class="value-cell">
+        <input type="text" inputmode="decimal" data-field="amount" class="num" autocomplete="off">
+        <span class="unit">€</span>
+      </span>
+      <span>
+        <select data-field="freq">
+          <option value="monthly">monatlich</option>
+          <option value="quarterly">quartalsweise</option>
+          <option value="halfyearly">halbjährlich</option>
+          <option value="yearly">jährlich</option>
+        </select>
+      </span>
+      <span class="num" data-role="monthly">–</span>
+      <span class="row-actions">
+        <button type="button" class="icon" data-action="remove-fixed" aria-label="Position entfernen">✕</button>
+      </span>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

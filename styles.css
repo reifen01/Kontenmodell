@@ -1,0 +1,283 @@
+:root {
+  /* Kontenfarben – von den Buckets über var(--c-*) referenziert */
+  --c-risiko: #e0803c;
+  --c-fix: #5b8def;
+  --c-lifestyle: #d4589a;
+  --c-urlaub: #35b0a7;
+  --c-invest: #5fbf5f;
+  --c-steuer: #a07ce0;
+  --c-rest: #8a94a6;
+
+  --bg: #0f1218;
+  --surface: #171b23;
+  --surface-2: #1e232d;
+  --line: #2a3040;
+  --text: #e8ecf3;
+  --text-dim: #9aa4b5;
+  --accent: #5b8def;
+  --danger: #e2564a;
+  --ok: #5fbf5f;
+
+  --radius: 12px;
+  --gap: 16px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f7;
+    --line: #dfe4ec;
+    --text: #1b2029;
+    --text-dim: #667287;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2 { margin: 0; font-weight: 600; }
+h1 { font-size: 20px; letter-spacing: .2px; }
+h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .8px; }
+
+/* ---------- Kopfzeile ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+
+.income { display: flex; align-items: center; gap: 10px; }
+.income label { color: var(--text-dim); font-size: 13px; }
+
+.income-field { position: relative; }
+.income-field input {
+  width: 140px;
+  padding-right: 26px;
+  text-align: right;
+  font-size: 17px;
+  font-weight: 600;
+}
+.income-field .unit {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+/* ---------- Layout ---------- */
+
+main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--gap) 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  margin-bottom: 14px;
+}
+
+.summary h2 { margin-bottom: 14px; }
+
+/* ---------- Balken ---------- */
+
+.bar {
+  display: flex;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  margin-bottom: 18px;
+}
+
+.bar span {
+  transition: width .18s ease;
+  min-width: 0;
+}
+
+.bar.over { box-shadow: inset 0 0 0 2px var(--danger); }
+
+/* ---------- Summen ---------- */
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.totals dt { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+.totals dd { margin: 2px 0 0; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.totals dd.negative { color: var(--danger); }
+.totals dd.positive { color: var(--ok); }
+
+/* ---------- Tabellen ---------- */
+
+.table { display: flex; flex-direction: column; }
+
+.row {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.buckets .row { grid-template-columns: minmax(180px, 2.2fr) 130px 116px 110px 100px 32px; }
+.fixed .row   { grid-template-columns: minmax(180px, 2.2fr) 130px 150px 110px 32px; }
+
+.row.head {
+  padding-bottom: 8px;
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+.row:last-child { border-bottom: 0; }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: var(--text-dim); }
+
+.name-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.name-stack { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+
+.swatch {
+  width: 10px;
+  height: 32px;
+  border-radius: 5px;
+  background: var(--swatch, var(--c-rest));
+  flex: none;
+}
+
+.value-cell { position: relative; }
+.value-cell input { width: 100%; padding-right: 28px; text-align: right; }
+.value-cell .unit {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.row-actions { display: flex; justify-content: flex-end; }
+
+/* ---------- Formularelemente ---------- */
+
+input, select {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+input.note { font-size: 12.5px; color: var(--text-dim); padding: 4px 10px; }
+input[disabled] { opacity: .45; }
+
+.btn {
+  padding: 7px 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+.icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.icon:hover { color: var(--danger); border-color: var(--line); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.hint { margin: 14px 0 0; color: var(--text-dim); font-size: 13px; }
+.hint.warn { color: var(--danger); }
+
+/* ---------- Mobil ---------- */
+
+@media (max-width: 820px) {
+  /* Auf kleinen Displays braucht die Kopfzeile zwei Zeilen – dann lieber mitscrollen. */
+  .topbar { position: static; }
+  .topbar-inner { padding: 12px 16px; }
+  main { padding: var(--gap) 16px 48px; }
+  .card { padding: 16px; }
+
+  .buckets .row, .fixed .row { grid-template-columns: 1fr 1fr; }
+  .row.head { display: none; }
+
+  .row.bucket, .row.fixed-row {
+    padding: 14px 0;
+    gap: 8px;
+  }
+
+  .name-cell { grid-column: 1 / -1; }
+  .buckets .row [data-role="yearly"] { display: none; }
+  .row-actions { grid-column: 2; }
+  .fixed .row [data-role="monthly"] { grid-column: 1; }
+
+  .num[data-role="monthly"]::before {
+    content: "pro Monat ";
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+}

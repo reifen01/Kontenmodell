@@ -161,7 +161,7 @@ main {
   border-bottom: 1px solid var(--line);
 }
 
-.buckets .row { grid-template-columns: minmax(180px, 2.2fr) 130px 116px 110px 100px 32px; }
+.buckets .row { grid-template-columns: minmax(160px, 2.2fr) 126px 108px 108px 74px 96px 32px; }
 .fixed .row   { grid-template-columns: minmax(180px, 2.2fr) 130px 150px 110px 32px; }
 
 .row.head {
@@ -272,7 +272,8 @@ input[disabled] { opacity: .45; }
   }
 
   .name-cell { grid-column: 1 / -1; }
-  .buckets .row [data-role="yearly"] { display: none; }
+  .buckets .row [data-role="yearly"],
+  .buckets .row [data-role="share"] { display: none; }
   .row-actions { grid-column: 2; }
   .fixed .row [data-role="monthly"] { grid-column: 1; }
 

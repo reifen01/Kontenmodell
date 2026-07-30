@@ -36,12 +36,16 @@
           <dd data-role="total-fixed">–</dd>
         </div>
         <div>
-          <dt data-role="rest-label">Nicht zugeteilt</dt>
+          <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
           <dd data-role="total-rest">–</dd>
         </div>
         <div>
           <dt>Fixkostenquote</dt>
           <dd data-role="fixed-rate">–</dd>
+        </div>
+        <div>
+          <dt>Konten</dt>
+          <dd data-role="bucket-count">–</dd>
         </div>
       </dl>
 
@@ -60,6 +64,7 @@
           <span>Modus</span>
           <span>Wert</span>
           <span class="num">pro Monat</span>
+          <span class="num">Anteil</span>
           <span class="num">pro Jahr</span>
           <span></span>
         </div>
@@ -126,6 +131,7 @@
         <span class="unit" data-role="value-unit"></span>
       </span>
       <span class="num" data-role="monthly">–</span>
+      <span class="num muted" data-role="share">–</span>
       <span class="num muted" data-role="yearly">–</span>
       <span class="row-actions">
         <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>

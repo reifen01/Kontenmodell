@@ -219,6 +219,8 @@ function refresh() {
   for (const row of bucketRows.children) {
     const amount = result.amounts.get(row.dataset.id) ?? 0;
     $('[data-role="monthly"]', row).textContent = fmtEUR(amount);
+    $('[data-role="share"]', row).textContent =
+      result.income > 0 ? fmtPct((amount / result.income) * 100) : '–';
     $('[data-role="yearly"]', row).textContent = fmtEUR(amount * 12);
   }
 
@@ -230,11 +232,12 @@ function refresh() {
   $('[data-role="total-allocated"]').textContent = fmtEUR(result.allocated);
   $('[data-role="total-fixed"]').textContent = fmtEUR(result.fixedMonthly);
   $('[data-role="fixed-rate"]').textContent = fmtPct(result.fixedRate);
+  $('[data-role="bucket-count"]').textContent = String(state.buckets.length);
 
   const over = result.rest < -0.005;
   const restLabel = $('[data-role="rest-label"]');
   const restValue = $('[data-role="total-rest"]');
-  restLabel.textContent = over ? 'Überzogen' : 'Nicht zugeteilt';
+  restLabel.textContent = over ? 'Überzogen' : 'Rest auf Hausbank';
   restValue.textContent = fmtEUR(Math.abs(result.rest));
   restValue.classList.toggle('negative', over);
   restValue.classList.toggle('positive', !over && result.rest > 0.005);

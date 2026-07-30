@@ -18,17 +18,24 @@ const outPath = resolve(
   outArg !== -1 ? args[outArg + 1] : 'dist/kontenmodell.html',
 );
 
-const [html, css, js] = await Promise.all(
-  ['index.html', 'styles.css', 'app.js'].map((name) =>
+const [html, css, js, iconSvg] = await Promise.all(
+  ['index.html', 'styles.css', 'app.js', 'icons/icon.svg'].map((name) =>
     readFile(resolve(root, name), 'utf8'),
   ),
 );
+
+/* In einer einzelnen Datei gibt es den icons-Ordner nicht mehr – das Logo
+   wandert als data:-URI hinein, die restlichen Verweise entfallen. */
+const iconDataUri = `data:image/svg+xml;base64,${Buffer.from(iconSvg).toString('base64')}`;
 
 /* Ersetzungen als Funktion, damit $-Zeichen im Quelltext nicht als
    Rückverweise interpretiert werden. */
 let out = html
   .replace(/\s*<link rel="stylesheet" href="styles\.css">/, () => `\n  <style>\n${css}\n  </style>`)
-  .replace(/\s*<script src="app\.js"><\/script>/, () => `\n  <script>\n${js}\n  </script>`);
+  .replace(/\s*<script src="app\.js"><\/script>/, () => `\n  <script>\n${js}\n  </script>`)
+  .replace(/icons\/icon\.svg/g, () => iconDataUri)
+  .replace(/\s*<link rel="manifest"[^>]*>/g, '')
+  .replace(/\s*<link rel="(?:icon|apple-touch-icon)"[^>]*icons\/[^>]*>/g, '');
 
 if (bodyOnly) {
   const title = out.match(/<title>(.*?)<\/title>/s)?.[1] ?? 'Kontenmodell';

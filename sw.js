@@ -19,13 +19,14 @@ const APP_SHELL = [
   './icons/icon-512.png',
 ];
 
+/* Eine neue Fassung wartet, bis die Seite sie anfordert – so tauscht sich die
+   App nicht mitten in einer Eingabe aus. */
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE_VERSION)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

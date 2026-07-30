@@ -119,6 +119,26 @@ stattdessen die Anleitung über Teilen → „Zum Home-Bildschirm".
 Dafür muss die Seite über HTTP(S) ausgeliefert werden – per `file://` gibt es
 keinen Service Worker, die Seite funktioniert dann aber ganz normal.
 
+### Updates
+
+Eine neue Fassung wird vom Service Worker geladen, aber nicht sofort aktiv –
+sonst würde die App mitten in einer Eingabe ausgetauscht. Stattdessen:
+
+- **Icon oben links antippen** sucht sofort nach einer neuen Fassung und meldet
+  das Ergebnis; wartet bereits eine, wird sie direkt übernommen.
+- Wird beim Start oder bei der halbstündlichen Prüfung eine gefunden, erscheint
+  ein grüner Punkt am Icon und der Hinweis „Neue Version verfügbar".
+- „Jetzt aktualisieren" schickt `SKIP_WAITING` an den wartenden Worker; sobald er
+  übernimmt, lädt die Seite neu. Gespeicherte Daten bleiben unberührt.
+
+## Aufräumen
+
+- **Standardwerte** stellt das Beispielmodell wieder her.
+- **🧹 Alles löschen** leert Konten, Fixkosten und Wallets vollständig und
+  entfernt die `kontenmodell.*`-Einträge aus dem localStorage – danach steht die
+  App wie frisch installiert da. Zwei Rückfragen schützen vor Versehen; ein
+  Backup sollte vorher liegen.
+
 ## Daten
 
 Der Zustand liegt in `localStorage` (Schlüssel `kontenmodell.v1`); es werden

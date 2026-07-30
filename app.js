@@ -84,6 +84,22 @@ const DEFAULT_DATA = {
   },
 };
 
+/* Leerer Zustand: alles weg, nichts vorbelegt. */
+const EMPTY_DATA = {
+  income: 0,
+  buckets: [],
+  fixedCosts: [],
+  bitcoin: {
+    source: 'manual',
+    rate: 0,
+    interval: 'monthly',
+    price: 0,
+    targetSats: 5_000_000,
+    holdings: 0,
+    wallets: [],
+  },
+};
+
 /* ---------- Hilfsfunktionen ---------- */
 
 const eur = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
@@ -143,7 +159,9 @@ function normalize(raw) {
 function normalizeBitcoin(raw) {
   const src = raw && typeof raw === 'object' ? raw : {};
   const fallback = DEFAULT_DATA.bitcoin;
-  const wallets = Array.isArray(src.wallets) && src.wallets.length ? src.wallets : fallback.wallets;
+  /* Eine leere Liste ist eine Aussage – nur wenn gar keine da ist, greifen die
+     Vorgaben (etwa bei Exporten aus einer älteren Fassung). */
+  const wallets = Array.isArray(src.wallets) ? src.wallets : fallback.wallets;
 
   return {
     source: src.source === 'manual' || typeof src.source === 'string' ? src.source : fallback.source,
@@ -777,12 +795,18 @@ document.addEventListener('click', (event) => {
   if (action === 'install-app') installApp();
   if (action === 'install-dismiss') dismissInstall();
 
+  if (action === 'clear-all') clearAll();
+  if (action === 'check-update') checkForUpdate();
+  if (action === 'apply-update') applyUpdate();
+  if (action === 'update-dismiss') updateBanner.hidden = true;
+
   if (action === 'reset') {
     if (!confirm('Konten, Fixkosten und Bitcoin-Modell auf die Standardwerte zurücksetzen?')) return;
     state = normalize(DEFAULT_DATA);
     incomeInput.value = plain.format(state.income);
     save();
     renderRows();
+    toast('Standardwerte wiederhergestellt.');
   }
 });
 
@@ -1148,6 +1172,42 @@ restoreSecret.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') restoreBackup();
 });
 
+/* ---------- Kurze Rückmeldung ---------- */
+
+const toastEl = $('#toast');
+let toastTimer = null;
+
+function toast(message) {
+  toastEl.textContent = message;
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toastEl.hidden = true; }, 4000);
+}
+
+/* ---------- Alles löschen ---------- */
+
+function clearAll() {
+  if (!confirm(
+    'Alles löschen?\n\nKonten, Fixkosten und Wallets werden vollständig geleert – ' +
+    'du startest mit einer leeren App.\n\nHast du vorher ein Backup gespeichert?',
+  )) return;
+
+  if (!confirm('Wirklich löschen? Das lässt sich nicht rückgängig machen.')) return;
+
+  state = normalize(EMPTY_DATA);
+  incomeInput.value = '';
+
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('kontenmodell.')) localStorage.removeItem(key);
+    }
+  } catch { /* ohne Speicher bleibt nur der Zustand im Fenster */ }
+
+  save();
+  renderRows();
+  toast('🧹 Alles gelöscht – lege neue Konten an oder lade ein Backup.');
+}
+
 /* ============================ App installieren ============================ */
 
 const INSTALL_KEY = 'kontenmodell.install-dismissed';
@@ -1207,15 +1267,104 @@ function dismissInstall() {
   } catch { /* ohne Speicher erscheint der Hinweis beim nächsten Mal wieder */ }
 }
 
+/* ============================ Neue Version laden ============================
+ *
+ * Der Service Worker installiert eine neue Fassung, aktiviert sie aber erst auf
+ * Zuruf. Ein Tippen auf das Icon oben links sucht sofort nach einer neuen
+ * Fassung; wartet schon eine, erscheint der Hinweis von selbst.
+ */
+
+const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
+
+const updateBanner = $('#update-banner');
+const updateBadge = $('[data-role="update-badge"]');
+
+let swRegistration = null;
+let waitingWorker = null;
+
+function announceUpdate(worker) {
+  waitingWorker = worker;
+  updateBadge.hidden = false;
+  updateBanner.hidden = false;
+}
+
+function watchRegistration(registration) {
+  swRegistration = registration;
+
+  if (registration.waiting && navigator.serviceWorker.controller) {
+    announceUpdate(registration.waiting);
+  }
+
+  registration.addEventListener('updatefound', () => {
+    const worker = registration.installing;
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+      /* Ein Controller bedeutet: Die App lief schon – es ist ein Update,
+         keine Erstinstallation. */
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        announceUpdate(worker);
+      }
+    });
+  });
+
+  setInterval(() => registration.update().catch(() => {}), UPDATE_CHECK_INTERVAL);
+}
+
 /* Der Service Worker macht die App offline nutzbar – über file:// gibt es ihn
    nicht, dort bleibt es bei der normalen Seite. */
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((err) => {
-      console.warn('Service Worker nicht registriert:', err);
-    });
+
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    location.reload();
   });
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('sw.js')
+      .then(watchRegistration)
+      .catch((err) => console.warn('Service Worker nicht registriert:', err));
+  });
+}
+
+function applyUpdate() {
+  if (waitingWorker) {
+    /* Der Neustart passiert über controllerchange. */
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    updateBanner.hidden = true;
+    toast('Aktualisiere …');
+  } else {
+    location.reload();
+  }
+}
+
+async function checkForUpdate() {
+  if (waitingWorker) {
+    applyUpdate();
+    return;
+  }
+
+  if (!swRegistration) {
+    toast('Updates gibt es nur, wenn die App über eine Webadresse läuft.');
+    return;
+  }
+
+  toast('Suche nach einer neuen Version …');
+  try {
+    await swRegistration.update();
+  } catch {
+    toast('Die Suche hat nicht geklappt – bist du online?');
+    return;
+  }
+
+  if (swRegistration.installing || swRegistration.waiting) {
+    toast('Neue Version wird geladen …');
+  } else {
+    toast('Du hast bereits die neueste Version.');
+  }
 }
 
 /* ---------- Start ---------- */

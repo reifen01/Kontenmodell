@@ -21,7 +21,11 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <h1>Kontenmodell</h1>
+      <button type="button" class="brand" data-action="check-update" title="Auf neue Version prüfen">
+        <img src="icons/icon.svg" alt="" width="30" height="30">
+        <h1>Kontenmodell</h1>
+        <span class="badge" data-role="update-badge" hidden aria-label="Neue Version verfügbar"></span>
+      </button>
 
       <nav class="tabs" role="tablist" aria-label="Modell">
         <button type="button" class="tab" role="tab" id="tab-privat" data-tab="privat"
@@ -373,12 +377,15 @@
         <button type="button" class="btn" data-action="backup-restore">Backup laden</button>
         <button type="button" class="btn" data-action="export">Als JSON exportieren</button>
         <button type="button" class="btn" data-action="import">JSON importieren</button>
-        <button type="button" class="btn danger" data-action="reset">Zurücksetzen</button>
+        <button type="button" class="btn" data-action="reset">Standardwerte</button>
+        <button type="button" class="btn danger" data-action="clear-all">🧹 Alles löschen</button>
         <input type="file" id="import-file" accept="application/json,.json" hidden>
       </div>
       <p class="hint">
         Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.
         Das Backup verschlüsselt deine Daten mit PIN oder Passwort (AES-256), der JSON-Export ist unverschlüsselt.
+        <strong>Standardwerte</strong> stellt das Beispielmodell wieder her, <strong>Alles löschen</strong>
+        leert Konten, Fixkosten und Wallets vollständig.
       </p>
     </section>
   </main>
@@ -469,9 +476,24 @@
     </div>
   </dialog>
 
+  <!-- ============================ Neue Version ============================ -->
+  <aside id="update-banner" class="floater" hidden>
+    <div class="floater-body">
+      <strong>Neue Version verfügbar</strong>
+      <p>Die aktualisierte Fassung ist geladen und wartet – deine Daten bleiben erhalten.</p>
+      <div class="floater-actions">
+        <button type="button" class="btn primary" data-action="apply-update">Jetzt aktualisieren</button>
+        <button type="button" class="btn" data-action="update-dismiss">Später</button>
+      </div>
+    </div>
+    <button type="button" class="icon" data-action="update-dismiss" aria-label="Hinweis schließen">✕</button>
+  </aside>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
   <!-- ============================ App installieren ============================ -->
-  <aside id="install-banner" class="install" hidden>
-    <div class="install-body">
+  <aside id="install-banner" class="floater" hidden>
+    <div class="floater-body">
       <strong data-role="install-title">App installieren</strong>
       <p data-role="install-text">
         Lege das Kontenmodell als App auf den Startbildschirm – schneller Zugriff, funktioniert auch offline.
@@ -481,7 +503,7 @@
         <li><strong>„Zum Home-Bildschirm"</strong> wählen</li>
         <li>Oben rechts auf <strong>„Hinzufügen"</strong> tippen</li>
       </ol>
-      <div class="install-actions">
+      <div class="floater-actions">
         <button type="button" class="btn primary" data-action="install-app">Installieren</button>
         <button type="button" class="btn" data-action="install-dismiss">Später</button>
       </div>

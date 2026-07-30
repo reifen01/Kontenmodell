@@ -96,6 +96,18 @@ So zeigt der Lade-Dialog Datum und Umfang an, bevor der PIN abgefragt wird.
 Der PIN wird nirgends gespeichert: Geht er verloren, ist die Datei nicht mehr
 lesbar. Der Lade-Dialog akzeptiert auch unverschlüsselte JSON-Exporte.
 
+## Veröffentlichen (GitHub Pages)
+
+`.github/workflows/pages.yml` veröffentlicht den Repo-Inhalt bei jedem Push auf
+`main` – ohne Build-Schritt, die Dateien gehen unverändert online. Der Workflow
+schaltet Pages beim ersten Lauf selbst ein (`configure-pages` mit
+`enablement: true`), lässt sich unter *Actions → GitHub Pages* aber auch von
+Hand starten.
+
+Adresse danach: `https://<benutzer>.github.io/Kontenmodell/`. Alle Pfade in der
+App sind relativ, Service Worker und Manifest funktionieren unter diesem
+Unterpfad. Für ein privates Repository braucht Pages einen bezahlten GitHub-Plan.
+
 ## Als App installieren
 
 Die Seite ist eine PWA: `manifest.webmanifest`, Icons unter `icons/` und ein

@@ -788,6 +788,7 @@ document.addEventListener('click', (event) => {
     resetRestoreDialog();
     restoreDialog.showModal();
   }
+  if (action === 'explain-backup') $('#dlg-datenhilfe').showModal();
   if (action === 'pick-backup') $('#restore-file').click();
   if (action === 'restore-apply') restoreBackup();
   if (action === 'close-dialog') event.target.closest('dialog')?.close();

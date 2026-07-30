@@ -374,6 +374,8 @@
       </div>
       <div class="actions">
         <button type="button" class="btn primary" data-action="backup-create">🔒 Backup mit PIN</button>
+        <button type="button" class="hint-dot" data-action="explain-backup"
+                title="Backup oder JSON-Export?" aria-label="Unterschied zwischen Backup und JSON-Export">?</button>
         <button type="button" class="btn" data-action="backup-restore">Backup laden</button>
         <button type="button" class="btn" data-action="export">Als JSON exportieren</button>
         <button type="button" class="btn" data-action="import">JSON importieren</button>
@@ -473,6 +475,50 @@
     <div class="modal-foot">
       <button type="button" class="btn" data-action="close-dialog">Abbrechen</button>
       <button type="button" class="btn primary" data-action="restore-apply" disabled>Wiederherstellen</button>
+    </div>
+  </dialog>
+
+  <!-- ============================ Backup oder Export? ============================ -->
+  <dialog id="dlg-datenhilfe" class="modal" aria-labelledby="dlg-datenhilfe-title">
+    <form method="dialog" class="modal-head">
+      <h2 id="dlg-datenhilfe-title">Backup oder JSON-Export?</h2>
+      <button class="icon" value="cancel" aria-label="Schließen">✕</button>
+    </form>
+
+    <div class="modal-body">
+      <p>Beide enthalten dasselbe: Einkommen, Konten, Fixkosten und das Bitcoin-Modell. Der Unterschied ist die Verschlüsselung.</p>
+
+      <div class="rule">
+        <h3>🔒 Backup mit PIN</h3>
+        <p>
+          Verschlüsselt mit AES-256; aus deinem PIN wird der Schlüssel abgeleitet.
+          In der Datei stehen nur Datum und Anzahlen – „7 Konten, 6 Fixkosten, 4 Wallets" –,
+          damit du vor der PIN-Eingabe siehst, was drin ist. Beträge sind darin nicht enthalten.
+        </p>
+      </div>
+
+      <div class="rule">
+        <h3>Als JSON exportieren</h3>
+        <p>
+          Klartext. In einem Editor stehen deine Zahlen lesbar da – gut zum Nachsehen,
+          Bearbeiten oder Weiterverwenden, ungeeignet für alles, was aus der Hand geht.
+        </p>
+      </div>
+
+      <dl class="pairs">
+        <div><dt>Verlässt das Gerät</dt><dd>Cloud, Mail, Stick, zweites Handy → Backup mit PIN</dd></div>
+        <div><dt>Bleibt bei dir</dt><dd>Nur ansehen oder Werte ändern → JSON-Export</dd></div>
+        <div><dt>Wieder einlesen</dt><dd>„Backup laden" nimmt beides; das PIN-Feld erscheint nur bei verschlüsselten Dateien.</dd></div>
+      </dl>
+
+      <p class="callout">
+        <strong>Wichtig:</strong> Den PIN kennt niemand außer dir, auch diese App speichert ihn nicht.
+        Vergisst du ihn, bleibt die Datei endgültig unlesbar.
+      </p>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn primary" data-action="close-dialog">Verstanden</button>
     </div>
   </dialog>
 

@@ -334,7 +334,23 @@ input[disabled] { opacity: .45; }
 }
 .icon:hover { color: var(--danger); border-color: var(--line); }
 
-.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* Fragezeichen neben einer Schaltfläche, das die Erklärung öffnet */
+.hint-dot {
+  width: 24px;
+  height: 24px;
+  margin-left: -4px;
+  padding: 0;
+  flex: none;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font: 600 13px/1 inherit;
+  cursor: pointer;
+}
+.hint-dot:hover { color: var(--text); border-color: var(--accent); }
 
 /* ---------- Eingabefelder im Bitcoin-Tab ---------- */
 

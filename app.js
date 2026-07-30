@@ -14,6 +14,22 @@ const FREQ_FACTOR = {
 };
 
 const MODES = ['percent', 'fixed', 'linked', 'rest'];
+const WALLET_MODES = ['percent', 'fixed', 'rest'];
+
+/* Sparplan-Käufe pro Monat je Intervall */
+const INTERVAL_BUYS = {
+  daily: 365 / 12,
+  weekly: 52 / 12,
+  monthly: 1,
+};
+
+const SATS_PER_BTC = 100_000_000;
+
+/* Unterhalb dieser UTXO-Größe wird das Zusammenlegen später teuer. */
+const MIN_UTXO_SATS = 3_000_000;
+
+/* Ab diesem Bestand lohnt sich der Aufwand für Multisig. */
+const MULTISIG_THRESHOLD = 100_000;
 
 const PALETTE = [
   'var(--c-risiko)',
@@ -23,6 +39,13 @@ const PALETTE = [
   'var(--c-invest)',
   'var(--c-steuer)',
   'var(--c-spende)',
+];
+
+const WALLET_PALETTE = [
+  'var(--c-hot)',
+  'var(--c-cold)',
+  'var(--c-coldpp)',
+  'var(--c-multisig)',
 ];
 
 const DEFAULT_DATA = {
@@ -44,6 +67,21 @@ const DEFAULT_DATA = {
     { id: 'y8t8a8x', name: 'KFZ-Versicherung', amount: 600, freq: 'yearly' },
     { id: 'ebgp242', name: 'Strom', amount: 210, freq: 'quarterly' },
   ],
+  bitcoin: {
+    /* Sparrate: entweder aus einem Konto des Privatmodells oder manuell */
+    source: 'qr0ws1l',
+    rate: 100,
+    interval: 'monthly',
+    price: 100000,
+    targetSats: 5_000_000,
+    holdings: 10000,
+    wallets: [
+      { id: 'w1hotxx', name: 'Hot Wallet', note: 'Alltag, kleine Beträge – wie die Brieftasche', mode: 'fixed', value: 200, color: 'var(--c-hot)' },
+      { id: 'w2coldx', name: 'Cold Wallet', note: 'Hardware-Wallet, Ziel des Sparplans', mode: 'percent', value: 20, color: 'var(--c-cold)' },
+      { id: 'w3coldp', name: 'Cold + Passphrase', note: 'konsolidierte UTXOs, langfristig', mode: 'rest', value: 0, color: 'var(--c-coldpp)' },
+      { id: 'w4multi', name: 'Multisig', note: 'optional, erst bei großen Beständen', mode: 'percent', value: 0, color: 'var(--c-multisig)' },
+    ],
+  },
 };
 
 /* ---------- Hilfsfunktionen ---------- */
@@ -52,8 +90,13 @@ const eur = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' 
 const pct = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
 const plain = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
+const ints = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
+const btcFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 8, maximumFractionDigits: 8 });
+
 const fmtEUR = (n) => eur.format(n || 0);
 const fmtPct = (n) => `${pct.format(n || 0)} %`;
+const fmtSats = (n) => `${ints.format(Math.round(n || 0))} sats`;
+const fmtBTC = (n) => `${btcFmt.format(n || 0)} BTC`;
 
 /** Akzeptiert "1.234,56", "1234.56", "13,99 €" … */
 function parseNum(raw) {
@@ -91,6 +134,31 @@ function normalize(raw) {
       name: String(f?.name ?? ''),
       amount: Math.max(0, parseNum(f?.amount)),
       freq: FREQ_FACTOR[f?.freq] ? f.freq : 'monthly',
+    })),
+    bitcoin: normalizeBitcoin(data.bitcoin),
+  };
+}
+
+/* Ältere Exporte kennen den Bitcoin-Teil noch nicht – dann greifen die Vorgaben. */
+function normalizeBitcoin(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const fallback = DEFAULT_DATA.bitcoin;
+  const wallets = Array.isArray(src.wallets) && src.wallets.length ? src.wallets : fallback.wallets;
+
+  return {
+    source: src.source === 'manual' || typeof src.source === 'string' ? src.source : fallback.source,
+    rate: Math.max(0, parseNum(src.rate ?? fallback.rate)),
+    interval: INTERVAL_BUYS[src.interval] ? src.interval : fallback.interval,
+    price: Math.max(0, parseNum(src.price ?? fallback.price)),
+    targetSats: Math.max(0, parseNum(src.targetSats ?? fallback.targetSats)),
+    holdings: Math.max(0, parseNum(src.holdings ?? fallback.holdings)),
+    wallets: wallets.map((w, i) => ({
+      id: w?.id || newId(),
+      name: String(w?.name ?? ''),
+      note: String(w?.note ?? ''),
+      mode: WALLET_MODES.includes(w?.mode) ? w.mode : 'percent',
+      value: Math.max(0, parseNum(w?.value)),
+      color: w?.color || WALLET_PALETTE[i % WALLET_PALETTE.length],
     })),
   };
 }
@@ -206,6 +274,7 @@ function renderRows() {
   bucketRows.replaceChildren(...state.buckets.map(buildBucketRow));
   fixedRows.replaceChildren(...state.fixedCosts.map(buildFixedRow));
   refresh();
+  renderBitcoinRows();
 }
 
 /* ---------- Berechnete Werte aktualisieren ---------- */
@@ -251,32 +320,229 @@ function refresh() {
   renderBar(result, over);
 }
 
-function renderBar(result, over) {
-  const scale = Math.max(result.income, result.allocated);
+/** Zeichnet einen gestapelten Balken aus { amount, color, label, faded }. */
+function paintBar(el, parts, scale, over) {
   const segments = [];
 
   if (scale > 0) {
-    for (const b of state.buckets) {
-      const amount = result.amounts.get(b.id) ?? 0;
-      if (amount <= 0) continue;
+    for (const part of parts) {
+      if (part.amount <= 0.005) continue;
       const seg = document.createElement('span');
-      seg.style.width = `${(amount / scale) * 100}%`;
-      seg.style.background = b.color;
-      seg.title = `${b.name || 'Konto'}: ${fmtEUR(amount)}`;
-      segments.push(seg);
-    }
-    if (result.rest > 0.005) {
-      const seg = document.createElement('span');
-      seg.style.width = `${(result.rest / scale) * 100}%`;
-      seg.style.background = 'var(--c-rest)';
-      seg.style.opacity = '.35';
-      seg.title = `Nicht zugeteilt: ${fmtEUR(result.rest)}`;
+      seg.style.width = `${(part.amount / scale) * 100}%`;
+      seg.style.background = part.color;
+      if (part.faded) seg.style.opacity = '.35';
+      seg.title = `${part.label}: ${fmtEUR(part.amount)}`;
       segments.push(seg);
     }
   }
 
-  bar.replaceChildren(...segments);
-  bar.classList.toggle('over', over);
+  el.replaceChildren(...segments);
+  el.classList.toggle('over', Boolean(over));
+}
+
+function renderBar(result, over) {
+  const parts = state.buckets.map((b) => ({
+    amount: result.amounts.get(b.id) ?? 0,
+    color: b.color,
+    label: b.name || 'Konto',
+  }));
+
+  parts.push({
+    amount: result.rest,
+    color: 'var(--c-rest)',
+    label: 'Rest auf Hausbank',
+    faded: true,
+  });
+
+  paintBar(bar, parts, Math.max(result.income, result.allocated), over);
+  if (walletRows.children.length) refreshBitcoin();
+}
+
+/* ============================ Bitcoin-Modell ============================ */
+
+const walletRows = $('#wallet-rows');
+const tplWallet = $('#tpl-wallet');
+const btcBar = $('#btc-bar');
+
+const btc = () => state.bitcoin;
+const walletById = (id) => btc().wallets.find((w) => w.id === id);
+
+/** Monatliche Sparrate: entweder aus einem Konto des Privatmodells oder manuell. */
+function savingsRate() {
+  const linked = bucketById(btc().source);
+  if (!linked) return btc().rate;
+  return compute().amounts.get(linked.id) ?? 0;
+}
+
+function computeBitcoin() {
+  const cfg = btc();
+  const rate = savingsRate();
+  const buysPerMonth = INTERVAL_BUYS[cfg.interval] ?? 1;
+  const perBuy = rate / buysPerMonth;
+  const satsPerBuy = cfg.price > 0 ? (perBuy / cfg.price) * SATS_PER_BTC : 0;
+
+  const buysToTarget = satsPerBuy > 0 ? Math.ceil(cfg.targetSats / satsPerBuy) : Infinity;
+  const monthsToTarget = Number.isFinite(buysToTarget) ? buysToTarget / buysPerMonth : Infinity;
+
+  /* Aufteilung des Bestands auf die Wallets – wie im Privatmodell, ohne "Fixkosten". */
+  const amounts = new Map();
+  let assigned = 0;
+
+  for (const w of cfg.wallets) {
+    if (w.mode === 'rest') continue;
+    const amount = w.mode === 'percent' ? (cfg.holdings * w.value) / 100 : w.value;
+    amounts.set(w.id, amount);
+    assigned += amount;
+  }
+
+  const restWallets = cfg.wallets.filter((w) => w.mode === 'rest');
+  if (restWallets.length) {
+    const share = Math.max(0, cfg.holdings - assigned) / restWallets.length;
+    for (const w of restWallets) {
+      amounts.set(w.id, share);
+      assigned += share;
+    }
+  }
+
+  return {
+    rate,
+    perBuy,
+    satsPerBuy,
+    buysPerMonth,
+    buysToTarget,
+    monthsToTarget,
+    targetEur: (cfg.targetSats / SATS_PER_BTC) * cfg.price,
+    holdingsBtc: cfg.price > 0 ? cfg.holdings / cfg.price : 0,
+    amounts,
+    assigned,
+    rest: cfg.holdings - assigned,
+  };
+}
+
+function applyWalletMode(row, wallet) {
+  const input = $('[data-field="value"]', row);
+  const unit = $('[data-role="value-unit"]', row);
+  const derived = wallet.mode === 'rest';
+
+  input.disabled = derived;
+  input.value = derived ? '' : plain.format(wallet.value);
+  input.placeholder = derived ? 'Rest' : '';
+  unit.textContent = wallet.mode === 'percent' ? '%' : wallet.mode === 'fixed' ? '€' : '';
+}
+
+function buildWalletRow(wallet) {
+  const row = tplWallet.content.firstElementChild.cloneNode(true);
+  row.dataset.id = wallet.id;
+  $('[data-role="swatch"]', row).style.setProperty('--swatch', wallet.color);
+  $('[data-field="name"]', row).value = wallet.name;
+  $('[data-field="note"]', row).value = wallet.note;
+  $('[data-field="mode"]', row).value = wallet.mode;
+  applyWalletMode(row, wallet);
+  return row;
+}
+
+/** Auswahlliste für die Herkunft der Sparrate neu aufbauen. */
+function renderSourceOptions() {
+  const select = $('#btc-source');
+  const options = state.buckets.map((b) => {
+    const option = document.createElement('option');
+    option.value = b.id;
+    option.textContent = `aus „${b.name || 'Konto'}“`;
+    return option;
+  });
+
+  const manual = document.createElement('option');
+  manual.value = 'manual';
+  manual.textContent = 'manuell';
+  options.push(manual);
+
+  select.replaceChildren(...options);
+  select.value = bucketById(btc().source) ? btc().source : 'manual';
+  if (select.value === 'manual') btc().source = 'manual';
+}
+
+function renderBitcoinRows() {
+  walletRows.replaceChildren(...btc().wallets.map(buildWalletRow));
+  renderSourceOptions();
+
+  const cfg = btc();
+  $('#btc-interval').value = cfg.interval;
+  $('#btc-price').value = plain.format(cfg.price);
+  $('#btc-target').value = ints.format(cfg.targetSats);
+  $('#btc-holdings').value = plain.format(cfg.holdings);
+  refreshBitcoin();
+}
+
+function refreshBitcoin() {
+  const cfg = btc();
+  const result = computeBitcoin();
+  const linked = Boolean(bucketById(cfg.source));
+
+  const rateInput = $('#btc-rate');
+  rateInput.disabled = linked;
+  if (linked || document.activeElement !== rateInput) {
+    rateInput.value = plain.format(linked ? result.rate : cfg.rate);
+  }
+
+  $('[data-role="btc-per-buy"]').textContent = fmtEUR(result.perBuy);
+  $('[data-role="btc-sats-buy"]').textContent = fmtSats(result.satsPerBuy);
+  $('[data-role="btc-target-eur"]').textContent = fmtEUR(result.targetEur);
+  $('[data-role="btc-buys"]').textContent =
+    Number.isFinite(result.buysToTarget) ? ints.format(result.buysToTarget) : '–';
+  $('[data-role="btc-months"]').textContent =
+    Number.isFinite(result.monthsToTarget) ? `${pct.format(result.monthsToTarget)} Monate` : '–';
+  $('[data-role="btc-holdings-btc"]').textContent = fmtBTC(result.holdingsBtc);
+
+  $('[data-role="btc-utxo-hint"]').textContent = utxoHint(result);
+
+  for (const row of walletRows.children) {
+    const amount = result.amounts.get(row.dataset.id) ?? 0;
+    $('[data-role="amount"]', row).textContent = fmtEUR(amount);
+    $('[data-role="share"]', row).textContent =
+      cfg.holdings > 0 ? fmtPct((amount / cfg.holdings) * 100) : '–';
+  }
+
+  const over = result.rest < -0.005;
+  const walletWarning = $('[data-role="btc-wallet-warning"]');
+  walletWarning.hidden = !over;
+  walletWarning.className = 'hint warn';
+  if (over) {
+    walletWarning.textContent =
+      `Die Wallets fassen ${fmtEUR(Math.abs(result.rest))} mehr, als der Bestand hergibt.`;
+  }
+
+  $('[data-role="btc-multisig-hint"]').textContent =
+    cfg.holdings >= MULTISIG_THRESHOLD
+      ? `Ab etwa ${fmtEUR(MULTISIG_THRESHOLD)} lohnt es sich, Multisig zu prüfen – mit dem Aufwand, den die Einrichtung und die Nachlassplanung mit sich bringen.`
+      : `Unter etwa ${fmtEUR(MULTISIG_THRESHOLD)} ist Multisig meist mehr Aufwand als Nutzen; Cold Wallet mit Passphrase reicht.`;
+
+  const parts = cfg.wallets.map((w) => ({
+    amount: result.amounts.get(w.id) ?? 0,
+    color: w.color,
+    label: w.name || 'Wallet',
+  }));
+  parts.push({ amount: result.rest, color: 'var(--c-rest)', label: 'nicht zugeteilt', faded: true });
+
+  paintBar(btcBar, parts, Math.max(cfg.holdings, result.assigned), over);
+}
+
+function utxoHint(result) {
+  if (!(result.satsPerBuy > 0)) {
+    return 'Trage Sparrate und Bitcoin-Kurs ein, um die UTXO-Größe abzuschätzen.';
+  }
+  if (result.satsPerBuy >= btc().targetSats) {
+    return 'Jeder einzelne Kauf erreicht bereits die Zielgröße – die UTXOs müssen später nicht zusammengelegt werden.';
+  }
+
+  const months = pct.format(result.monthsToTarget);
+  const small = result.satsPerBuy < MIN_UTXO_SATS;
+  const base =
+    `Ein Kauf liefert ${fmtSats(result.satsPerBuy)}. Nach ${ints.format(result.buysToTarget)} Käufen ` +
+    `(rund ${months} Monate) ist die Zielgröße erreicht – dann konsolidiert in die Passphrase-Wallet schicken.`;
+
+  return small
+    ? `${base} Einzeln bleiben die Beträge unter ${fmtSats(MIN_UTXO_SATS)}, was das spätere Ausgeben teuer macht.`
+    : base;
 }
 
 /* ---------- Ereignisse ---------- */
@@ -305,6 +571,7 @@ bucketRows.addEventListener('input', (event) => {
 
   save();
   if (field === 'value') refresh();
+  if (field === 'name') renderSourceOptions();
 });
 
 bucketRows.addEventListener('change', (event) => {
@@ -342,6 +609,88 @@ fixedRows.addEventListener('change', (event) => {
   refresh();
 });
 
+/* ---------- Ereignisse im Bitcoin-Tab ---------- */
+
+/* Zahlenfeld → Feld im Bitcoin-Zustand */
+const BTC_INPUTS = {
+  'btc-rate': 'rate',
+  'btc-price': 'price',
+  'btc-target': 'targetSats',
+  'btc-holdings': 'holdings',
+};
+
+for (const [id, key] of Object.entries(BTC_INPUTS)) {
+  const input = $(`#${id}`);
+  input.addEventListener('input', () => {
+    btc()[key] = Math.max(0, parseNum(input.value));
+    save();
+    refreshBitcoin();
+  });
+  input.addEventListener('blur', () => {
+    const value = btc()[key];
+    input.value = key === 'targetSats' ? ints.format(value) : plain.format(value);
+  });
+}
+
+$('#btc-source').addEventListener('change', (event) => {
+  btc().source = event.target.value;
+  save();
+  refreshBitcoin();
+});
+
+$('#btc-interval').addEventListener('change', (event) => {
+  btc().interval = INTERVAL_BUYS[event.target.value] ? event.target.value : 'monthly';
+  save();
+  refreshBitcoin();
+});
+
+walletRows.addEventListener('input', (event) => {
+  const field = event.target.dataset.field;
+  const wallet = walletById(event.target.closest('.wallet')?.dataset.id);
+  if (!field || !wallet) return;
+
+  if (field === 'value') wallet.value = Math.max(0, parseNum(event.target.value));
+  else wallet[field] = event.target.value;
+
+  save();
+  if (field === 'value') refreshBitcoin();
+});
+
+walletRows.addEventListener('change', (event) => {
+  if (event.target.dataset.field !== 'mode') return;
+  const row = event.target.closest('.wallet');
+  const wallet = walletById(row?.dataset.id);
+  if (!wallet) return;
+
+  wallet.mode = WALLET_MODES.includes(event.target.value) ? event.target.value : 'percent';
+  applyWalletMode(row, wallet);
+  save();
+  refreshBitcoin();
+});
+
+/* ---------- Tabs ---------- */
+
+const TAB_KEY = 'kontenmodell.tab';
+
+function showTab(name) {
+  const target = name === 'bitcoin' ? 'bitcoin' : 'privat';
+
+  for (const tab of document.querySelectorAll('.tab')) {
+    tab.setAttribute('aria-selected', String(tab.dataset.tab === target));
+  }
+  $('#panel-privat').hidden = target !== 'privat';
+  $('#panel-bitcoin').hidden = target !== 'bitcoin';
+
+  try {
+    localStorage.setItem(TAB_KEY, target);
+  } catch { /* ohne Speicher läuft die Seite trotzdem */ }
+}
+
+document.querySelector('.tabs').addEventListener('click', (event) => {
+  const tab = event.target.closest('.tab');
+  if (tab) showTab(tab.dataset.tab);
+});
+
 document.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!action) return;
@@ -368,6 +717,28 @@ document.addEventListener('click', (event) => {
     renderRows();
   }
 
+  if (action === 'add-wallet') {
+    btc().wallets.push({
+      id: newId(),
+      name: '',
+      note: '',
+      mode: 'percent',
+      value: 0,
+      color: WALLET_PALETTE[btc().wallets.length % WALLET_PALETTE.length],
+    });
+    save();
+    renderBitcoinRows();
+    const last = walletRows.lastElementChild;
+    if (last) $('[data-field="name"]', last).focus();
+  }
+
+  if (action === 'remove-wallet') {
+    const id = event.target.closest('.wallet')?.dataset.id;
+    btc().wallets = btc().wallets.filter((w) => w.id !== id);
+    save();
+    renderBitcoinRows();
+  }
+
   if (action === 'add-fixed') {
     state.fixedCosts.push({ id: newId(), name: '', amount: 0, freq: 'monthly' });
     save();
@@ -387,7 +758,7 @@ document.addEventListener('click', (event) => {
   if (action === 'import') $('#import-file').click();
 
   if (action === 'reset') {
-    if (!confirm('Alle Konten und Fixkosten auf die Standardwerte zurücksetzen?')) return;
+    if (!confirm('Konten, Fixkosten und Bitcoin-Modell auf die Standardwerte zurücksetzen?')) return;
     state = normalize(DEFAULT_DATA);
     incomeInput.value = plain.format(state.income);
     save();
@@ -422,4 +793,12 @@ $('#import-file').addEventListener('change', async (event) => {
   }
 });
 
+/* ---------- Start ---------- */
+
 renderRows();
+
+let startTab = 'privat';
+try {
+  startTab = localStorage.getItem(TAB_KEY) || 'privat';
+} catch { /* ohne Speicher startet immer das Privatmodell */ }
+showTab(startTab);

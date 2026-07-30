@@ -10,6 +10,14 @@
   <header class="topbar">
     <div class="topbar-inner">
       <h1>Kontenmodell</h1>
+
+      <nav class="tabs" role="tablist" aria-label="Modell">
+        <button type="button" class="tab" role="tab" id="tab-privat" data-tab="privat"
+                aria-controls="panel-privat" aria-selected="true">Privat</button>
+        <button type="button" class="tab" role="tab" id="tab-bitcoin" data-tab="bitcoin"
+                aria-controls="panel-bitcoin" aria-selected="false">Bitcoin</button>
+      </nav>
+
       <div class="income">
         <label for="income">Monatliches Nettoeinkommen</label>
         <div class="income-field">
@@ -21,79 +29,202 @@
   </header>
 
   <main>
-    <section class="card summary" aria-labelledby="summary-title">
-      <h2 id="summary-title">Übersicht</h2>
+    <!-- ============================ Privates Kontomodell ============================ -->
+    <div id="panel-privat" role="tabpanel" aria-labelledby="tab-privat" class="panel">
+      <section class="card summary" aria-labelledby="summary-title">
+        <h2 id="summary-title">Übersicht</h2>
 
-      <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+        <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
 
-      <dl class="totals">
-        <div>
-          <dt>Zugeteilt</dt>
-          <dd data-role="total-allocated">–</dd>
+        <dl class="totals">
+          <div>
+            <dt>Zugeteilt</dt>
+            <dd data-role="total-allocated">–</dd>
+          </div>
+          <div>
+            <dt>Fixkosten (monatlich)</dt>
+            <dd data-role="total-fixed">–</dd>
+          </div>
+          <div>
+            <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
+            <dd data-role="total-rest">–</dd>
+          </div>
+          <div>
+            <dt>Fixkostenquote</dt>
+            <dd data-role="fixed-rate">–</dd>
+          </div>
+          <div>
+            <dt>Konten</dt>
+            <dd data-role="bucket-count">–</dd>
+          </div>
+        </dl>
+
+        <p class="hint" data-role="warning" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="buckets-title">
+        <div class="card-head">
+          <h2 id="buckets-title">Konten</h2>
+          <button type="button" class="btn" data-action="add-bucket">+ Konto</button>
         </div>
-        <div>
-          <dt>Fixkosten (monatlich)</dt>
-          <dd data-role="total-fixed">–</dd>
-        </div>
-        <div>
-          <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
-          <dd data-role="total-rest">–</dd>
-        </div>
-        <div>
-          <dt>Fixkostenquote</dt>
-          <dd data-role="fixed-rate">–</dd>
-        </div>
-        <div>
-          <dt>Konten</dt>
-          <dd data-role="bucket-count">–</dd>
-        </div>
-      </dl>
 
-      <p class="hint" data-role="warning" hidden></p>
-    </section>
-
-    <section class="card" aria-labelledby="buckets-title">
-      <div class="card-head">
-        <h2 id="buckets-title">Konten</h2>
-        <button type="button" class="btn" data-action="add-bucket">+ Konto</button>
-      </div>
-
-      <div class="table buckets" id="buckets">
-        <div class="row head" aria-hidden="true">
-          <span>Konto</span>
-          <span>Modus</span>
-          <span>Wert</span>
-          <span class="num">pro Monat</span>
-          <span class="num">Anteil</span>
-          <span class="num">pro Jahr</span>
-          <span></span>
+        <div class="table buckets" id="buckets">
+          <div class="row head" aria-hidden="true">
+            <span>Konto</span>
+            <span>Modus</span>
+            <span>Wert</span>
+            <span class="num">pro Monat</span>
+            <span class="num">Anteil</span>
+            <span class="num">pro Jahr</span>
+            <span></span>
+          </div>
+          <div id="bucket-rows"></div>
         </div>
-        <div id="bucket-rows"></div>
-      </div>
 
-      <p class="hint">
-        <strong>Prozent</strong> = Anteil vom Einkommen · <strong>Fester Betrag</strong> = feste Summe ·
-        <strong>Fixkosten</strong> = Summe aller Fixkosten unten · <strong>Rest</strong> = was übrig bleibt.
-      </p>
-    </section>
+        <p class="hint">
+          <strong>Prozent</strong> = Anteil vom Einkommen · <strong>Fester Betrag</strong> = feste Summe ·
+          <strong>Fixkosten</strong> = Summe aller Fixkosten unten · <strong>Rest</strong> = was übrig bleibt.
+        </p>
+      </section>
 
-    <section class="card" aria-labelledby="fixed-title">
-      <div class="card-head">
-        <h2 id="fixed-title">Fixkosten</h2>
-        <button type="button" class="btn" data-action="add-fixed">+ Position</button>
-      </div>
-
-      <div class="table fixed" id="fixed">
-        <div class="row head" aria-hidden="true">
-          <span>Position</span>
-          <span class="num">Betrag</span>
-          <span>Turnus</span>
-          <span class="num">pro Monat</span>
-          <span></span>
+      <section class="card" aria-labelledby="fixed-title">
+        <div class="card-head">
+          <h2 id="fixed-title">Fixkosten</h2>
+          <button type="button" class="btn" data-action="add-fixed">+ Position</button>
         </div>
-        <div id="fixed-rows"></div>
-      </div>
-    </section>
+
+        <div class="table fixed" id="fixed">
+          <div class="row head" aria-hidden="true">
+            <span>Position</span>
+            <span class="num">Betrag</span>
+            <span>Turnus</span>
+            <span class="num">pro Monat</span>
+            <span></span>
+          </div>
+          <div id="fixed-rows"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================ Bitcoin-Kontomodell ============================ -->
+    <div id="panel-bitcoin" role="tabpanel" aria-labelledby="tab-bitcoin" class="panel" hidden>
+      <section class="card" aria-labelledby="flow-title">
+        <h2 id="flow-title">Ablauf</h2>
+        <ol class="flow">
+          <li><span class="flow-box">Investmentkonto</span><span class="flow-note">monatliche Sparrate</span></li>
+          <li><span class="flow-box">Sparplan (DCA)</span><span class="flow-note">täglich · wöchentlich · monatlich</span></li>
+          <li><span class="flow-box">Cold Wallet</span><span class="flow-note">Käufe sammeln sich an</span></li>
+          <li><span class="flow-box">Cold + Passphrase</span><span class="flow-note">konsolidiert, langfristig</span></li>
+        </ol>
+        <p class="hint">
+          Das Hot Wallet wird bei Bedarf aus dem Cold Wallet befüllt. Multisig kommt erst
+          bei großen Beständen dazu und wird danach nicht mehr angefasst.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="plan-title">
+        <h2 id="plan-title">Sparplan &amp; UTXO-Größe</h2>
+
+        <div class="fields">
+          <label>
+            <span>Sparrate</span>
+            <select id="btc-source"></select>
+          </label>
+          <label>
+            <span>… pro Monat</span>
+            <span class="value-cell">
+              <input id="btc-rate" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">€</span>
+            </span>
+          </label>
+          <label>
+            <span>Intervall</span>
+            <select id="btc-interval">
+              <option value="daily">täglich</option>
+              <option value="weekly">wöchentlich</option>
+              <option value="monthly">monatlich</option>
+            </select>
+          </label>
+          <label>
+            <span>Bitcoin-Kurs</span>
+            <span class="value-cell">
+              <input id="btc-price" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">€</span>
+            </span>
+          </label>
+          <label>
+            <span>Ziel-UTXO</span>
+            <span class="value-cell">
+              <input id="btc-target" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">sats</span>
+            </span>
+          </label>
+        </div>
+
+        <dl class="totals">
+          <div>
+            <dt>Pro Kauf</dt>
+            <dd data-role="btc-per-buy">–</dd>
+          </div>
+          <div>
+            <dt>Sats pro Kauf</dt>
+            <dd data-role="btc-sats-buy">–</dd>
+          </div>
+          <div>
+            <dt>Ziel-UTXO in Euro</dt>
+            <dd data-role="btc-target-eur">–</dd>
+          </div>
+          <div>
+            <dt>Käufe bis Zielgröße</dt>
+            <dd data-role="btc-buys">–</dd>
+          </div>
+          <div>
+            <dt>Dauer bis Konsolidierung</dt>
+            <dd data-role="btc-months">–</dd>
+          </div>
+        </dl>
+
+        <p class="hint" data-role="btc-utxo-hint"></p>
+      </section>
+
+      <section class="card" aria-labelledby="wallets-title">
+        <div class="card-head">
+          <h2 id="wallets-title">Wallet-Struktur</h2>
+          <button type="button" class="btn" data-action="add-wallet">+ Wallet</button>
+        </div>
+
+        <div class="fields">
+          <label>
+            <span>Bitcoin-Bestand</span>
+            <span class="value-cell">
+              <input id="btc-holdings" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">€</span>
+            </span>
+          </label>
+          <label>
+            <span>entspricht</span>
+            <output class="readout" data-role="btc-holdings-btc">–</output>
+          </label>
+        </div>
+
+        <div class="bar" id="btc-bar" role="img" aria-label="Aufteilung des Bitcoin-Bestands"></div>
+
+        <div class="table wallets" id="wallets">
+          <div class="row head" aria-hidden="true">
+            <span>Wallet</span>
+            <span>Modus</span>
+            <span>Wert</span>
+            <span class="num">Betrag</span>
+            <span class="num">Anteil</span>
+            <span></span>
+          </div>
+          <div id="wallet-rows"></div>
+        </div>
+
+        <p class="hint" data-role="btc-wallet-warning" hidden></p>
+        <p class="hint" data-role="btc-multisig-hint"></p>
+      </section>
+    </div>
 
     <section class="card" aria-labelledby="data-title">
       <div class="card-head">
@@ -157,6 +288,34 @@
       <span class="num" data-role="monthly">–</span>
       <span class="row-actions">
         <button type="button" class="icon" data-action="remove-fixed" aria-label="Position entfernen">✕</button>
+      </span>
+    </div>
+  </template>
+
+  <template id="tpl-wallet">
+    <div class="row wallet">
+      <span class="name-cell">
+        <span class="swatch" data-role="swatch"></span>
+        <span class="name-stack">
+          <input type="text" data-field="name" placeholder="Wallet" autocomplete="off">
+          <input type="text" data-field="note" class="note" placeholder="Zweck" autocomplete="off">
+        </span>
+      </span>
+      <span>
+        <select data-field="mode">
+          <option value="percent">Prozent</option>
+          <option value="fixed">Fester Betrag</option>
+          <option value="rest">Rest</option>
+        </select>
+      </span>
+      <span class="value-cell">
+        <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
+        <span class="unit" data-role="value-unit"></span>
+      </span>
+      <span class="num" data-role="amount">–</span>
+      <span class="num muted" data-role="share">–</span>
+      <span class="row-actions">
+        <button type="button" class="icon" data-action="remove-wallet" aria-label="Wallet entfernen">✕</button>
       </span>
     </div>
   </template>

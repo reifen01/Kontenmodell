@@ -9,6 +9,12 @@
   --c-spende: #d9a521;
   --c-rest: #8a94a6;
 
+  /* Wallet-Farben im Bitcoin-Modell */
+  --c-hot: #f7931a;
+  --c-cold: #4aa3df;
+  --c-coldpp: #3d6fb4;
+  --c-multisig: #7d63c8;
+
   --bg: #0f1218;
   --surface: #171b23;
   --surface-2: #1e232d;
@@ -68,6 +74,37 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
   gap: var(--gap);
   flex-wrap: wrap;
 }
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.tab {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px #0003;
+}
+
+.panel { display: flex; flex-direction: column; gap: var(--gap); }
+.panel[hidden] { display: none; }
 
 .income { display: flex; align-items: center; gap: 10px; }
 .income label { color: var(--text-dim); font-size: 13px; }
@@ -163,6 +200,7 @@ main {
 
 .buckets .row { grid-template-columns: minmax(160px, 2.2fr) 126px 108px 108px 74px 96px 32px; }
 .fixed .row   { grid-template-columns: minmax(180px, 2.2fr) 130px 150px 110px 32px; }
+.wallets .row { grid-template-columns: minmax(190px, 2.2fr) 152px 116px 120px 80px 32px; }
 
 .row.head {
   padding-bottom: 8px;
@@ -251,6 +289,74 @@ input[disabled] { opacity: .45; }
 
 .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
+/* ---------- Eingabefelder im Bitcoin-Tab ---------- */
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.fields label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fields label > span:first-child {
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+/* "sats" braucht mehr Platz als ein Währungszeichen */
+#btc-target { padding-right: 46px; }
+
+.readout {
+  padding: 7px 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Ablauf ---------- */
+
+.flow {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.flow li {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  padding-right: 18px;
+}
+
+.flow li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: 0;
+  top: 8px;
+  color: var(--text-dim);
+}
+
+.flow-box {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--c-hot);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.flow li:nth-child(3) .flow-box { border-left-color: var(--c-cold); }
+.flow li:nth-child(4) .flow-box { border-left-color: var(--c-coldpp); }
+
+.flow-note { color: var(--text-dim); font-size: 12.5px; padding-left: 2px; }
+
 .hint { margin: 14px 0 0; color: var(--text-dim); font-size: 13px; }
 .hint.warn { color: var(--danger); }
 
@@ -263,22 +369,31 @@ input[disabled] { opacity: .45; }
   main { padding: var(--gap) 16px 48px; }
   .card { padding: 16px; }
 
-  .buckets .row, .fixed .row { grid-template-columns: 1fr 1fr; }
+  .buckets .row, .fixed .row, .wallets .row { grid-template-columns: 1fr 1fr; }
   .row.head { display: none; }
+  .flow li { padding-right: 0; }
+  .flow li:not(:last-child)::after { content: none; }
 
-  .row.bucket, .row.fixed-row {
+  .row.bucket, .row.fixed-row, .row.wallet {
     padding: 14px 0;
     gap: 8px;
   }
 
   .name-cell { grid-column: 1 / -1; }
   .buckets .row [data-role="yearly"],
-  .buckets .row [data-role="share"] { display: none; }
+  .buckets .row [data-role="share"],
+  .wallets .row [data-role="share"] { display: none; }
   .row-actions { grid-column: 2; }
   .fixed .row [data-role="monthly"] { grid-column: 1; }
 
   .num[data-role="monthly"]::before {
     content: "pro Monat ";
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .wallets .num[data-role="amount"]::before {
+    content: "Betrag ";
     color: var(--text-dim);
     font-size: 12px;
   }

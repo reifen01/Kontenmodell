@@ -2,7 +2,8 @@
 
 Kleiner Rechner für ein Mehrkontenmodell: Das monatliche Nettoeinkommen wird auf
 Konten ("Buckets") aufgeteilt, die Fixkosten werden aus einer eigenen Liste
-automatisch auf Monatswerte umgerechnet.
+automatisch auf Monatswerte umgerechnet. Ein zweiter Tab bildet die passende
+Bitcoin-Wallet-Struktur unterhalb des Investmentkontos ab.
 
 Reines HTML/CSS/JavaScript ohne Abhängigkeiten und ohne Build-Schritt.
 
@@ -34,6 +35,32 @@ Jede Position hat einen Betrag und einen Turnus (monatlich, quartalsweise,
 halbjährlich, jährlich). Der Monatswert ergibt sich aus Betrag × Faktor
 (1, ⅓, ⅙, 1⁄12) – eine Jahresprämie von 600 € zählt also mit 50 € pro Monat.
 
+## Bitcoin-Tab
+
+Zoomt in das Investmentkonto hinein und besteht aus zwei Teilen.
+
+**Sparplan & UTXO-Größe.** Die monatliche Sparrate wird entweder aus einem Konto
+des Privatmodells übernommen (Standard: Investment) oder manuell gesetzt. Aus
+Intervall (täglich / wöchentlich / monatlich), Kurs und Ziel-UTXO ergibt sich,
+wie groß ein einzelner Kauf ist und nach wie vielen Käufen bzw. Monaten die
+Zielgröße erreicht ist – der Zeitpunkt, um die angesammelten UTXOs konsolidiert
+auf die Passphrase-Wallet zu schicken. Unterhalb von 3 Mio. Satoshi pro UTXO
+weist der Rechner darauf hin, dass das spätere Ausgeben teuer wird, weil sich die
+Gebühr nach der Transaktionsgröße richtet und nicht nach dem Betrag.
+
+**Wallet-Struktur.** Der Bestand wird auf die Wallets verteilt – Modi `percent`,
+`fixed` und `rest` wie im Privatmodell:
+
+| Wallet            | Zweck                                            |
+| ----------------- | ------------------------------------------------ |
+| Hot Wallet        | Alltag, kleine Beträge                           |
+| Cold Wallet       | Hardware-Wallet, Ziel des Sparplans              |
+| Cold + Passphrase | konsolidierte UTXOs, Langfristbestand            |
+| Multisig          | optional, erst ab etwa 100.000 € Bestand         |
+
+Der Kurs wird nicht abgerufen, sondern von Hand eingetragen – die Seite macht
+keine Netzwerkanfragen.
+
 ## Daten
 
 Der Zustand liegt in `localStorage` (Schlüssel `kontenmodell.v1`); es werden
@@ -48,9 +75,24 @@ exportieren und wieder importieren:
   ],
   "fixedCosts": [
     { "id": "slbhko3", "name": "Miete / Wohnen", "amount": 900, "freq": "monthly" }
-  ]
+  ],
+  "bitcoin": {
+    "source": "qr0ws1l",
+    "rate": 100,
+    "interval": "monthly",
+    "price": 100000,
+    "targetSats": 5000000,
+    "holdings": 10000,
+    "wallets": [
+      { "id": "w2coldx", "name": "Cold Wallet", "note": "Ziel des Sparplans", "mode": "percent", "value": 20, "color": "var(--c-cold)" }
+    ]
+  }
 }
 ```
+
+`source` ist die ID des Kontos, aus dem die Sparrate kommt, oder `"manual"`.
+Ältere Exporte ohne `bitcoin`-Block lassen sich weiterhin importieren – dann
+greifen die Standardwerte.
 
 Die Kontofarben referenzieren CSS-Variablen (`--c-risiko`, `--c-fix`,
 `--c-lifestyle`, `--c-urlaub`, `--c-invest`, `--c-steuer`, `--c-spende`), die in

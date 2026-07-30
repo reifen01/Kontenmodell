@@ -119,12 +119,36 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
 .brand img { border-radius: 7px; display: block; }
 
 .badge {
-  width: 9px;
-  height: 9px;
+  width: 11px;
+  height: 11px;
+  flex: none;
   border-radius: 50%;
   background: var(--ok);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
+  animation: pulse 1.8s ease-in-out infinite;
 }
+
+@keyframes pulse {
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ok) 12%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge { animation: none; }
+}
+
+/* Kurzer Zustand direkt am Knopf – dort, wo man nach dem Tippen hinschaut. */
+.brand-status {
+  padding: 3px 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.brand-status.ready { background: color-mix(in srgb, var(--ok) 18%, transparent); border-color: var(--ok); color: var(--text); }
+.brand-status.problem { background: color-mix(in srgb, var(--danger) 15%, transparent); border-color: var(--danger); color: var(--text); }
 
 /* ---------- Tabs ---------- */
 
@@ -630,7 +654,7 @@ input[disabled] { opacity: .45; }
 .floater {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
   left: 16px;
   z-index: 20;
   display: flex;
@@ -656,7 +680,7 @@ input[disabled] { opacity: .45; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 30;
   transform: translateX(-50%);
   max-width: calc(100vw - 32px);

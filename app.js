@@ -1279,6 +1279,25 @@ const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
 
 const updateBanner = $('#update-banner');
 const updateBadge = $('[data-role="update-badge"]');
+const updateStatus = $('[data-role="update-status"]');
+
+let statusTimer = null;
+
+/** Kurzer Zustand am Icon. Ohne "bleibt" verschwindet er nach ein paar Sekunden. */
+function setUpdateStatus(text, { tone = '', bleibt = false } = {}) {
+  clearTimeout(statusTimer);
+
+  if (!text) {
+    updateStatus.hidden = true;
+    return;
+  }
+
+  updateStatus.textContent = text;
+  updateStatus.className = `brand-status ${tone}`.trim();
+  updateStatus.hidden = false;
+
+  if (!bleibt) statusTimer = setTimeout(() => { updateStatus.hidden = true; }, 5000);
+}
 
 let swRegistration = null;
 let waitingWorker = null;
@@ -1287,6 +1306,7 @@ function announceUpdate(worker) {
   waitingWorker = worker;
   updateBadge.hidden = false;
   updateBanner.hidden = false;
+  setUpdateStatus('Update bereit', { tone: 'ready', bleibt: true });
 }
 
 function watchRegistration(registration) {
@@ -1336,7 +1356,7 @@ function applyUpdate() {
     /* Der Neustart passiert über controllerchange. */
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     updateBanner.hidden = true;
-    toast('Aktualisiere …');
+    setUpdateStatus('aktualisiere …', { bleibt: true });
   } else {
     location.reload();
   }
@@ -1349,22 +1369,23 @@ async function checkForUpdate() {
   }
 
   if (!swRegistration) {
+    setUpdateStatus('offline-Betrieb aus', { tone: 'problem' });
     toast('Updates gibt es nur, wenn die App über eine Webadresse läuft.');
     return;
   }
 
-  toast('Suche nach einer neuen Version …');
+  setUpdateStatus('sucht …', { bleibt: true });
   try {
     await swRegistration.update();
   } catch {
-    toast('Die Suche hat nicht geklappt – bist du online?');
+    setUpdateStatus('keine Verbindung', { tone: 'problem' });
     return;
   }
 
   if (swRegistration.installing || swRegistration.waiting) {
-    toast('Neue Version wird geladen …');
+    setUpdateStatus('lädt neue Version …', { tone: 'ready', bleibt: true });
   } else {
-    toast('Du hast bereits die neueste Version.');
+    setUpdateStatus('aktuell ✓');
   }
 }
 

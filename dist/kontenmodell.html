@@ -133,12 +133,36 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
 .brand img { border-radius: 7px; display: block; }
 
 .badge {
-  width: 9px;
-  height: 9px;
+  width: 11px;
+  height: 11px;
+  flex: none;
   border-radius: 50%;
   background: var(--ok);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
+  animation: pulse 1.8s ease-in-out infinite;
 }
+
+@keyframes pulse {
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--ok) 12%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge { animation: none; }
+}
+
+/* Kurzer Zustand direkt am Knopf – dort, wo man nach dem Tippen hinschaut. */
+.brand-status {
+  padding: 3px 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.brand-status.ready { background: color-mix(in srgb, var(--ok) 18%, transparent); border-color: var(--ok); color: var(--text); }
+.brand-status.problem { background: color-mix(in srgb, var(--danger) 15%, transparent); border-color: var(--danger); color: var(--text); }
 
 /* ---------- Tabs ---------- */
 
@@ -644,7 +668,7 @@ input[disabled] { opacity: .45; }
 .floater {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
   left: 16px;
   z-index: 20;
   display: flex;
@@ -670,7 +694,7 @@ input[disabled] { opacity: .45; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 30;
   transform: translateX(-50%);
   max-width: calc(100vw - 32px);
@@ -755,6 +779,7 @@ input[disabled] { opacity: .45; }
         <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IktvbnRlbm1vZGVsbCI+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTIiIGZpbGw9IiMxNzFiMjMiLz4KICA8Zz4KICAgIDxyZWN0IHg9Ijk2IiB5PSIxMjAiIHdpZHRoPSIzMjAiIGhlaWdodD0iNDQiIHJ4PSIyMiIgZmlsbD0iI2UwODAzYyIvPgogICAgPHJlY3QgeD0iOTYiIHk9IjE5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSI0NCIgcng9IjIyIiBmaWxsPSIjNWI4ZGVmIi8+CiAgICA8cmVjdCB4PSI5NiIgeT0iMjcyIiB3aWR0aD0iMTc2IiBoZWlnaHQ9IjQ0IiByeD0iMjIiIGZpbGw9IiNkNDU4OWEiLz4KICAgIDxyZWN0IHg9Ijk2IiB5PSIzNDgiIHdpZHRoPSIxMTIiIGhlaWdodD0iNDQiIHJ4PSIyMiIgZmlsbD0iIzVmYmY1ZiIvPgogIDwvZz4KPC9zdmc+Cg==" alt="" width="30" height="30">
         <h1>Kontenmodell</h1>
         <span class="badge" data-role="update-badge" hidden aria-label="Neue Version verfügbar"></span>
+        <span class="brand-status" data-role="update-status" hidden></span>
       </button>
 
       <nav class="tabs" role="tablist" aria-label="Modell">
@@ -2648,6 +2673,25 @@ const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
 
 const updateBanner = $('#update-banner');
 const updateBadge = $('[data-role="update-badge"]');
+const updateStatus = $('[data-role="update-status"]');
+
+let statusTimer = null;
+
+/** Kurzer Zustand am Icon. Ohne "bleibt" verschwindet er nach ein paar Sekunden. */
+function setUpdateStatus(text, { tone = '', bleibt = false } = {}) {
+  clearTimeout(statusTimer);
+
+  if (!text) {
+    updateStatus.hidden = true;
+    return;
+  }
+
+  updateStatus.textContent = text;
+  updateStatus.className = `brand-status ${tone}`.trim();
+  updateStatus.hidden = false;
+
+  if (!bleibt) statusTimer = setTimeout(() => { updateStatus.hidden = true; }, 5000);
+}
 
 let swRegistration = null;
 let waitingWorker = null;
@@ -2656,6 +2700,7 @@ function announceUpdate(worker) {
   waitingWorker = worker;
   updateBadge.hidden = false;
   updateBanner.hidden = false;
+  setUpdateStatus('Update bereit', { tone: 'ready', bleibt: true });
 }
 
 function watchRegistration(registration) {
@@ -2705,7 +2750,7 @@ function applyUpdate() {
     /* Der Neustart passiert über controllerchange. */
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     updateBanner.hidden = true;
-    toast('Aktualisiere …');
+    setUpdateStatus('aktualisiere …', { bleibt: true });
   } else {
     location.reload();
   }
@@ -2718,22 +2763,23 @@ async function checkForUpdate() {
   }
 
   if (!swRegistration) {
+    setUpdateStatus('offline-Betrieb aus', { tone: 'problem' });
     toast('Updates gibt es nur, wenn die App über eine Webadresse läuft.');
     return;
   }
 
-  toast('Suche nach einer neuen Version …');
+  setUpdateStatus('sucht …', { bleibt: true });
   try {
     await swRegistration.update();
   } catch {
-    toast('Die Suche hat nicht geklappt – bist du online?');
+    setUpdateStatus('keine Verbindung', { tone: 'problem' });
     return;
   }
 
   if (swRegistration.installing || swRegistration.waiting) {
-    toast('Neue Version wird geladen …');
+    setUpdateStatus('lädt neue Version …', { tone: 'ready', bleibt: true });
   } else {
-    toast('Du hast bereits die neueste Version.');
+    setUpdateStatus('aktuell ✓');
   }
 }
 

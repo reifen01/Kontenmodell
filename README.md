@@ -69,6 +69,44 @@ vermeintlicher Notfälle, Ordnung), eine Einrichtungs-Anleitung in vier Schritte
 die Bankwahl je Konto, der Bitcoin-Teil in drei Sätzen und der Abschnitt zu
 Disziplin. Reiner Text, keine Eingaben.
 
+## Backup mit PIN
+
+Neben dem einfachen JSON-Export gibt es ein verschlüsseltes Backup:
+
+- **Schlüsselableitung:** PBKDF2-SHA256, 200.000 Runden, fester App-Salt
+- **Verschlüsselung:** AES-GCM-256, zufälliger 96-Bit-IV je Datei
+- **PIN** (4+ Ziffern) oder **Passwort** (8+ Zeichen)
+
+Die Datei heißt `Kontenmodell_JJJJMMTT_HHMM_ZONE_AES256.json` und sieht so aus:
+
+```json
+{
+  "magic": "KM-BACKUP-1",
+  "v": 1,
+  "mode": "pin",
+  "iv": "<base64>",
+  "ciphertext": "<base64>",
+  "lastModified": "2026-07-30T18:25:00.000Z",
+  "summary": { "bucketCount": 7, "fixedCostCount": 6, "walletCount": 4 }
+}
+```
+
+`summary` bleibt unverschlüsselt, enthält aber nur Anzahlen – nie Beträge.
+So zeigt der Lade-Dialog Datum und Umfang an, bevor der PIN abgefragt wird.
+Der PIN wird nirgends gespeichert: Geht er verloren, ist die Datei nicht mehr
+lesbar. Der Lade-Dialog akzeptiert auch unverschlüsselte JSON-Exporte.
+
+## Als App installieren
+
+Die Seite ist eine PWA: `manifest.webmanifest`, Icons unter `icons/` und ein
+Service Worker (`sw.js`), der den App-Shell cacht – nach dem ersten Aufruf läuft
+alles offline. Auf Android und Desktop erscheint ein Installationshinweis
+(`beforeinstallprompt`), der sich für sieben Tage wegklicken lässt; iOS zeigt
+stattdessen die Anleitung über Teilen → „Zum Home-Bildschirm".
+
+Dafür muss die Seite über HTTP(S) ausgeliefert werden – per `file://` gibt es
+keinen Service Worker, die Seite funktioniert dann aber ganz normal.
+
 ## Daten
 
 Der Zustand liegt in `localStorage` (Schlüssel `kontenmodell.v1`); es werden
@@ -109,6 +147,8 @@ Hell- und Dunkelmodus folgen den Systemeinstellungen.
 
 ## Dateien
 
-- `index.html` – Aufbau und Zeilen-Templates
+- `index.html` – Aufbau, Zeilen-Templates, Dialoge
 - `styles.css` – Layout, Farbschema, mobile Ansicht
-- `app.js` – Zustand, Berechnung, Rendering, Import/Export
+- `app.js` – Zustand, Berechnung, Rendering, Backup, Installation
+- `sw.js`, `manifest.webmanifest`, `icons/` – PWA-Teil
+- `build-single.mjs` → `dist/kontenmodell.html` – alles in einer Datei

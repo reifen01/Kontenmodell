@@ -4,6 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kontenmodell – Einkommensaufteilung</title>
+  <meta name="description" content="Nettoeinkommen auf Zweckkonten aufteilen, Fixkosten monatlich umrechnen, Bitcoin-Wallets planen.">
+  <meta name="theme-color" content="#171b23">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kontenmodell">
   <style>
 :root {
   /* Kontenfarben – von den Buckets über var(--c-*) referenziert */
@@ -69,6 +80,9 @@
 
 * { box-sizing: border-box; }
 
+/* Ein eigenes display (flex, grid …) sticht sonst das hidden-Attribut aus. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -131,7 +145,6 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
 }
 
 .panel { display: flex; flex-direction: column; gap: var(--gap); }
-.panel[hidden] { display: none; }
 
 .income { display: flex; align-items: center; gap: 10px; }
 .income label { color: var(--text-dim); font-size: 13px; }
@@ -472,6 +485,154 @@ input[disabled] { opacity: .45; }
 
 .hint { margin: 14px 0 0; color: var(--text-dim); font-size: 13px; }
 .hint.warn { color: var(--danger); }
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.primary:disabled { opacity: .45; cursor: not-allowed; filter: none; }
+
+/* ---------- Dialoge ---------- */
+
+.modal {
+  width: min(460px, calc(100vw - 32px));
+  padding: 0;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px #0006;
+}
+
+.modal::backdrop { background: #0f1218cc; backdrop-filter: blur(2px); }
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h2 { font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); }
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+.modal-body p { margin: 0; font-size: 14px; color: var(--text-dim); }
+
+.modal-foot {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+}
+.modal-foot .btn { flex: 1; }
+
+.callout {
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.callout strong { color: var(--text); }
+
+.choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.choice-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.choice-option span { font-size: 11.5px; color: var(--text-dim); }
+.choice-option[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.choice-option[aria-pressed="true"] span { color: #ffffffcc; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > span {
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.field input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 18px 16px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.dropzone:hover { border-color: var(--accent); }
+.dropzone span { font-size: 12px; color: var(--text-dim); }
+
+.compare { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.compare > div { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: baseline; }
+.compare dt { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+.compare dd { margin: 0; font-size: 14px; }
+
+/* ---------- Installations-Hinweis ---------- */
+
+.install {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 20;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 380px;
+  margin-left: auto;
+  padding: 14px 14px 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px #00000059;
+}
+.install-body { flex: 1; min-width: 0; }
+.install-body strong { display: block; font-size: 14px; }
+.install-body p { margin: 4px 0 0; font-size: 12.5px; color: var(--text-dim); }
+.install-actions { display: flex; gap: 8px; margin-top: 12px; }
+.install-actions .btn { padding: 6px 12px; font-size: 13px; }
+
+.install-steps {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 /* ---------- Mobil ---------- */
 
@@ -865,14 +1026,125 @@ input[disabled] { opacity: .45; }
         <h2 id="data-title">Daten</h2>
       </div>
       <div class="actions">
+        <button type="button" class="btn primary" data-action="backup-create">🔒 Backup mit PIN</button>
+        <button type="button" class="btn" data-action="backup-restore">Backup laden</button>
         <button type="button" class="btn" data-action="export">Als JSON exportieren</button>
         <button type="button" class="btn" data-action="import">JSON importieren</button>
         <button type="button" class="btn danger" data-action="reset">Zurücksetzen</button>
         <input type="file" id="import-file" accept="application/json,.json" hidden>
       </div>
-      <p class="hint">Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.</p>
+      <p class="hint">
+        Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.
+        Das Backup verschlüsselt deine Daten mit PIN oder Passwort (AES-256), der JSON-Export ist unverschlüsselt.
+      </p>
     </section>
   </main>
+
+  <!-- ============================ Backup erstellen ============================ -->
+  <dialog id="dlg-backup" class="modal" aria-labelledby="dlg-backup-title">
+    <form method="dialog" class="modal-head">
+      <h2 id="dlg-backup-title">🔒 Backup einrichten</h2>
+      <button class="icon" value="cancel" aria-label="Schließen">✕</button>
+    </form>
+
+    <div class="modal-body">
+      <p>
+        Speichert Konten, Fixkosten und das Bitcoin-Modell verschlüsselt als Datei.
+        Auf jedem anderen Gerät liest du sie mit demselben PIN wieder ein.
+      </p>
+
+      <p class="callout">
+        <strong>Wichtig:</strong> Den PIN kennt niemand außer dir – auch diese App speichert ihn nicht.
+        Vergessener PIN heißt: Das Backup ist verloren.
+      </p>
+
+      <div class="choice">
+        <button type="button" class="choice-option" data-mode="pin" aria-pressed="true">
+          <strong>PIN</strong>
+          <span>4+ Ziffern, schnell</span>
+        </button>
+        <button type="button" class="choice-option" data-mode="password" aria-pressed="false">
+          <strong>Passwort</strong>
+          <span>8+ Zeichen, sicherer</span>
+        </button>
+      </div>
+
+      <label class="field">
+        <span data-role="secret-label">PIN (mindestens 4 Ziffern)</span>
+        <input type="password" id="backup-secret" inputmode="numeric" autocomplete="new-password" placeholder="z. B. 1234">
+      </label>
+
+      <label class="field">
+        <span>Wiederholen</span>
+        <input type="password" id="backup-confirm" inputmode="numeric" autocomplete="new-password">
+      </label>
+
+      <p class="hint warn" data-role="backup-error" hidden></p>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn" data-action="close-dialog">Abbrechen</button>
+      <button type="button" class="btn primary" data-action="backup-save">Backup-Datei speichern</button>
+    </div>
+  </dialog>
+
+  <!-- ============================ Backup laden ============================ -->
+  <dialog id="dlg-restore" class="modal" aria-labelledby="dlg-restore-title">
+    <form method="dialog" class="modal-head">
+      <h2 id="dlg-restore-title">Backup laden</h2>
+      <button class="icon" value="cancel" aria-label="Schließen">✕</button>
+    </form>
+
+    <div class="modal-body">
+      <p>Wähle eine Backup-Datei. Unverschlüsselte JSON-Exporte funktionieren hier ebenfalls.</p>
+
+      <button type="button" class="dropzone" data-action="pick-backup">
+        <strong data-role="restore-filename">Datei auswählen</strong>
+        <span>.json aus einem Backup dieser App</span>
+      </button>
+      <input type="file" id="restore-file" accept="application/json,.json" hidden>
+
+      <dl class="compare" data-role="restore-compare" hidden>
+        <div><dt>Stand der Datei</dt><dd data-role="restore-date">–</dd></div>
+        <div><dt>Inhalt</dt><dd data-role="restore-content">–</dd></div>
+        <div><dt>Verschlüsselt</dt><dd data-role="restore-encrypted">–</dd></div>
+      </dl>
+
+      <p class="hint" data-role="restore-age" hidden></p>
+
+      <label class="field" data-role="restore-secret-field" hidden>
+        <span data-role="restore-secret-label">PIN</span>
+        <input type="password" id="restore-secret" inputmode="numeric" autocomplete="current-password">
+      </label>
+
+      <p class="hint warn" data-role="restore-error" hidden></p>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn" data-action="close-dialog">Abbrechen</button>
+      <button type="button" class="btn primary" data-action="restore-apply" disabled>Wiederherstellen</button>
+    </div>
+  </dialog>
+
+  <!-- ============================ App installieren ============================ -->
+  <aside id="install-banner" class="install" hidden>
+    <div class="install-body">
+      <strong data-role="install-title">App installieren</strong>
+      <p data-role="install-text">
+        Lege das Kontenmodell als App auf den Startbildschirm – schneller Zugriff, funktioniert auch offline.
+      </p>
+      <ol class="install-steps" data-role="install-steps" hidden>
+        <li>Unten auf das Teilen-Symbol tippen</li>
+        <li><strong>„Zum Home-Bildschirm"</strong> wählen</li>
+        <li>Oben rechts auf <strong>„Hinzufügen"</strong> tippen</li>
+      </ol>
+      <div class="install-actions">
+        <button type="button" class="btn primary" data-action="install-app">Installieren</button>
+        <button type="button" class="btn" data-action="install-dismiss">Später</button>
+      </div>
+    </div>
+    <button type="button" class="icon" data-action="install-dismiss" aria-label="Hinweis schließen">✕</button>
+  </aside>
 
   <template id="tpl-bucket">
     <div class="row bucket">
@@ -1715,6 +1987,24 @@ document.addEventListener('click', (event) => {
   if (action === 'export') exportJson();
   if (action === 'import') $('#import-file').click();
 
+  if (action === 'backup-create') {
+    setBackupMode('pin');
+    backupDialog.showModal();
+    backupSecret.focus();
+  }
+  if (action === 'backup-save') saveBackup();
+
+  if (action === 'backup-restore') {
+    resetRestoreDialog();
+    restoreDialog.showModal();
+  }
+  if (action === 'pick-backup') $('#restore-file').click();
+  if (action === 'restore-apply') restoreBackup();
+  if (action === 'close-dialog') event.target.closest('dialog')?.close();
+
+  if (action === 'install-app') installApp();
+  if (action === 'install-dismiss') dismissInstall();
+
   if (action === 'reset') {
     if (!confirm('Konten, Fixkosten und Bitcoin-Modell auf die Standardwerte zurücksetzen?')) return;
     state = normalize(DEFAULT_DATA);
@@ -1751,6 +2041,411 @@ $('#import-file').addEventListener('change', async (event) => {
   }
 });
 
+/* ============================ Verschlüsseltes Backup ============================
+ *
+ * Schlüsselableitung: PBKDF2-SHA256, 200.000 Runden, fester App-Salt.
+ * Verschlüsselung:    AES-GCM-256 mit zufälligem 96-Bit-IV je Datei.
+ *
+ * Derselbe PIN erzeugt reproduzierbar denselben Schlüssel – die Datei lässt
+ * sich also auf jedem Gerät wieder öffnen. Der Salt darf öffentlich sein, er
+ * muss nur gleich bleiben. Gespeichert wird der PIN nirgends.
+ */
+
+const BACKUP_MAGIC = 'KM-BACKUP-1';
+const BACKUP_VERSION = 1;
+const APP_SALT = 'kontenmodell-backup-2026-v1';
+const PBKDF2_ITERATIONS = 200_000;
+const IV_BYTES = 12;
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const toBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+function fromBase64(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function deriveKey(secret) {
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey'],
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: textEncoder.encode(APP_SALT),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/** Zählt nur Positionen – Beträge stehen ausschließlich im verschlüsselten Teil. */
+const summarize = (data) => ({
+  bucketCount: data.buckets.length,
+  fixedCostCount: data.fixedCosts.length,
+  walletCount: data.bitcoin.wallets.length,
+});
+
+async function createBackup(secret, mode, data) {
+  const key = await deriveKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    textEncoder.encode(JSON.stringify(data)),
+  );
+
+  return {
+    magic: BACKUP_MAGIC,
+    v: BACKUP_VERSION,
+    mode,
+    iv: toBase64(iv),
+    ciphertext: toBase64(ciphertext),
+    lastModified: new Date().toISOString(),
+    summary: summarize(data),
+  };
+}
+
+async function decryptBackup(secret, file) {
+  const key = await deriveKey(secret);
+  let plain;
+
+  try {
+    plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(file.iv) },
+      key,
+      fromBase64(file.ciphertext),
+    );
+  } catch {
+    throw new Error(`Falscher ${file.mode === 'password' ? 'Passwort' : 'PIN'} oder beschädigte Datei.`);
+  }
+
+  try {
+    return JSON.parse(textDecoder.decode(plain));
+  } catch {
+    throw new Error('Die entschlüsselten Daten sind unlesbar.');
+  }
+}
+
+const isBackupFile = (value) =>
+  Boolean(value) &&
+  typeof value === 'object' &&
+  value.magic === BACKUP_MAGIC &&
+  typeof value.iv === 'string' &&
+  typeof value.ciphertext === 'string';
+
+/** Erkennt sowohl verschlüsselte Backups als auch den einfachen JSON-Export. */
+async function parseAnyBackup(file) {
+  let parsed;
+  try {
+    parsed = JSON.parse(await file.text());
+  } catch {
+    throw new Error('Die Datei ist kein gültiges JSON.');
+  }
+
+  if (isBackupFile(parsed)) return { kind: 'encrypted', file: parsed };
+
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.buckets)) {
+    const data = normalize(parsed);
+    return {
+      kind: 'plain',
+      data,
+      summary: summarize(data),
+      lastModified: null,
+    };
+  }
+
+  throw new Error('Diese Datei sieht nicht nach einem Kontenmodell-Backup aus.');
+}
+
+/** Dateiname im Stil Kontenmodell_20260730_1830_MESZ_AES256.json */
+function backupFilename(iso) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  const day = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const time = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+
+  let zone = 'LOCAL';
+  try {
+    const parts = new Intl.DateTimeFormat('de-DE', { timeZoneName: 'short' }).formatToParts(d);
+    const found = parts.find((p) => p.type === 'timeZoneName')?.value;
+    if (found) zone = found.replace(/[^A-Za-z]/g, '');
+  } catch { /* Fallback bleibt LOCAL */ }
+
+  return `Kontenmodell_${day}_${time}_${zone}_AES256.json`;
+}
+
+function downloadJson(content, filename) {
+  const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Dialog „Backup einrichten" ---------- */
+
+const backupDialog = $('#dlg-backup');
+const backupSecret = $('#backup-secret');
+const backupConfirm = $('#backup-confirm');
+const backupError = $('[data-role="backup-error"]');
+
+let backupMode = 'pin';
+
+const secretRules = {
+  pin: { test: (v) => /^\d{4,}$/.test(v), label: 'PIN (mindestens 4 Ziffern)', hint: 'Der PIN muss aus mindestens 4 Ziffern bestehen.' },
+  password: { test: (v) => v.length >= 8, label: 'Passwort (mindestens 8 Zeichen)', hint: 'Das Passwort muss mindestens 8 Zeichen haben.' },
+};
+
+function setBackupMode(mode) {
+  backupMode = secretRules[mode] ? mode : 'pin';
+
+  for (const option of backupDialog.querySelectorAll('.choice-option')) {
+    option.setAttribute('aria-pressed', String(option.dataset.mode === backupMode));
+  }
+
+  $('[data-role="secret-label"]', backupDialog).textContent = secretRules[backupMode].label;
+  backupSecret.placeholder = backupMode === 'pin' ? 'z. B. 1234' : 'z. B. ein-langes-passwort-2026';
+  for (const input of [backupSecret, backupConfirm]) {
+    input.inputMode = backupMode === 'pin' ? 'numeric' : 'text';
+    input.value = '';
+  }
+  backupError.hidden = true;
+}
+
+backupDialog.addEventListener('click', (event) => {
+  const mode = event.target.closest('.choice-option')?.dataset.mode;
+  if (mode) setBackupMode(mode);
+});
+
+async function saveBackup() {
+  const secret = backupSecret.value;
+  const rule = secretRules[backupMode];
+
+  const problem =
+    !rule.test(secret) ? rule.hint :
+    secret !== backupConfirm.value ? 'Die beiden Eingaben stimmen nicht überein.' :
+    null;
+
+  if (problem) {
+    backupError.textContent = problem;
+    backupError.hidden = false;
+    return;
+  }
+
+  backupError.hidden = true;
+  const button = $('[data-action="backup-save"]', backupDialog);
+  button.disabled = true;
+  button.textContent = 'Verschlüssele …';
+
+  try {
+    const file = await createBackup(secret, backupMode, state);
+    downloadJson(file, backupFilename(file.lastModified));
+    backupSecret.value = '';
+    backupConfirm.value = '';
+    backupDialog.close();
+  } catch (err) {
+    backupError.textContent = 'Das Backup konnte nicht erstellt werden.';
+    backupError.hidden = false;
+    console.warn(err);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Backup-Datei speichern';
+  }
+}
+
+/* ---------- Dialog „Backup laden" ---------- */
+
+const restoreDialog = $('#dlg-restore');
+const restoreSecret = $('#restore-secret');
+const restoreError = $('[data-role="restore-error"]');
+const restoreApply = $('[data-action="restore-apply"]', restoreDialog);
+
+let pendingBackup = null;
+
+function resetRestoreDialog() {
+  pendingBackup = null;
+  restoreSecret.value = '';
+  restoreError.hidden = true;
+  restoreApply.disabled = true;
+  $('[data-role="restore-filename"]').textContent = 'Datei auswählen';
+  $('[data-role="restore-compare"]').hidden = true;
+  $('[data-role="restore-age"]').hidden = true;
+  $('[data-role="restore-secret-field"]').hidden = true;
+}
+
+function describeContent(summary) {
+  return `${summary.bucketCount} Konten · ${summary.fixedCostCount} Fixkosten · ${summary.walletCount} Wallets`;
+}
+
+async function pickBackupFile(file) {
+  resetRestoreDialog();
+  $('[data-role="restore-filename"]').textContent = file.name;
+
+  try {
+    pendingBackup = await parseAnyBackup(file);
+  } catch (err) {
+    restoreError.textContent = err.message;
+    restoreError.hidden = false;
+    return;
+  }
+
+  const encrypted = pendingBackup.kind === 'encrypted';
+  const summary = encrypted ? pendingBackup.file.summary : pendingBackup.summary;
+  const stamp = encrypted ? pendingBackup.file.lastModified : pendingBackup.lastModified;
+
+  $('[data-role="restore-date"]').textContent = stamp
+    ? new Date(stamp).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+    : 'unbekannt';
+  $('[data-role="restore-content"]').textContent = summary ? describeContent(summary) : 'unbekannt';
+  $('[data-role="restore-encrypted"]').textContent = encrypted
+    ? `ja – ${pendingBackup.file.mode === 'password' ? 'Passwort' : 'PIN'} nötig`
+    : 'nein (einfacher JSON-Export)';
+  $('[data-role="restore-compare"]').hidden = false;
+
+  const age = $('[data-role="restore-age"]');
+  age.textContent = 'Beim Wiederherstellen wird der aktuelle Stand vollständig ersetzt.';
+  age.hidden = false;
+
+  const field = $('[data-role="restore-secret-field"]');
+  field.hidden = !encrypted;
+  if (encrypted) {
+    const isPin = pendingBackup.file.mode !== 'password';
+    $('[data-role="restore-secret-label"]').textContent = isPin ? 'PIN' : 'Passwort';
+    restoreSecret.inputMode = isPin ? 'numeric' : 'text';
+    restoreSecret.focus();
+  }
+
+  restoreApply.disabled = false;
+}
+
+function applyRestoredData(data) {
+  state = normalize(data);
+  incomeInput.value = plain.format(state.income);
+  save();
+  renderRows();
+}
+
+async function restoreBackup() {
+  if (!pendingBackup) return;
+
+  restoreError.hidden = true;
+  restoreApply.disabled = true;
+  restoreApply.textContent = 'Entschlüssele …';
+
+  try {
+    const data =
+      pendingBackup.kind === 'encrypted'
+        ? await decryptBackup(restoreSecret.value, pendingBackup.file)
+        : pendingBackup.data;
+
+    applyRestoredData(data);
+    resetRestoreDialog();
+    restoreDialog.close();
+  } catch (err) {
+    restoreError.textContent = err.message;
+    restoreError.hidden = false;
+    restoreApply.disabled = false;
+  } finally {
+    restoreApply.textContent = 'Wiederherstellen';
+  }
+}
+
+$('#restore-file').addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (file) pickBackupFile(file);
+});
+
+restoreSecret.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') restoreBackup();
+});
+
+/* ============================ App installieren ============================ */
+
+const INSTALL_KEY = 'kontenmodell.install-dismissed';
+const INSTALL_PAUSE = 7 * 24 * 60 * 60 * 1000;
+
+const installBanner = $('#install-banner');
+let installPrompt = null;
+
+const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+const isInstalled = () =>
+  window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+function recentlyDismissed() {
+  try {
+    const stamp = Number(localStorage.getItem(INSTALL_KEY));
+    return Boolean(stamp) && Date.now() - stamp < INSTALL_PAUSE;
+  } catch {
+    return false;
+  }
+}
+
+function setupInstallPrompt() {
+  if (isInstalled() || recentlyDismissed()) return;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    installBanner.hidden = false;
+  });
+
+  /* iOS kennt beforeinstallprompt nicht – dort hilft nur die Anleitung. */
+  if (isIos()) setTimeout(() => { installBanner.hidden = false; }, 3000);
+
+  window.addEventListener('appinstalled', () => { installBanner.hidden = true; });
+}
+
+async function installApp() {
+  if (isIos() || !installPrompt) {
+    $('[data-role="install-title"]').textContent = 'Auf dem iPhone hinzufügen';
+    $('[data-role="install-text"]').hidden = true;
+    $('[data-role="install-steps"]').hidden = false;
+    $('[data-action="install-app"]').hidden = true;
+    return;
+  }
+
+  await installPrompt.prompt();
+  const choice = await installPrompt.userChoice;
+  installPrompt = null;
+  if (choice.outcome === 'accepted') installBanner.hidden = true;
+}
+
+function dismissInstall() {
+  installBanner.hidden = true;
+  try {
+    localStorage.setItem(INSTALL_KEY, String(Date.now()));
+  } catch { /* ohne Speicher erscheint der Hinweis beim nächsten Mal wieder */ }
+}
+
+/* Der Service Worker macht die App offline nutzbar – über file:// gibt es ihn
+   nicht, dort bleibt es bei der normalen Seite. */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('Service Worker nicht registriert:', err);
+    });
+  });
+}
+
 /* ---------- Start ---------- */
 
 renderRows();
@@ -1760,6 +2455,9 @@ try {
   startTab = localStorage.getItem(TAB_KEY) || 'privat';
 } catch { /* ohne Speicher startet immer das Privatmodell */ }
 showTab(startTab);
+
+setupInstallPrompt();
+registerServiceWorker();
 
   </script>
 </body>

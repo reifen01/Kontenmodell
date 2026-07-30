@@ -4,6 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kontenmodell – Einkommensaufteilung</title>
+  <meta name="description" content="Nettoeinkommen auf Zweckkonten aufteilen, Fixkosten monatlich umrechnen, Bitcoin-Wallets planen.">
+  <meta name="theme-color" content="#171b23">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kontenmodell">
+
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -357,14 +369,125 @@
         <h2 id="data-title">Daten</h2>
       </div>
       <div class="actions">
+        <button type="button" class="btn primary" data-action="backup-create">🔒 Backup mit PIN</button>
+        <button type="button" class="btn" data-action="backup-restore">Backup laden</button>
         <button type="button" class="btn" data-action="export">Als JSON exportieren</button>
         <button type="button" class="btn" data-action="import">JSON importieren</button>
         <button type="button" class="btn danger" data-action="reset">Zurücksetzen</button>
         <input type="file" id="import-file" accept="application/json,.json" hidden>
       </div>
-      <p class="hint">Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.</p>
+      <p class="hint">
+        Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.
+        Das Backup verschlüsselt deine Daten mit PIN oder Passwort (AES-256), der JSON-Export ist unverschlüsselt.
+      </p>
     </section>
   </main>
+
+  <!-- ============================ Backup erstellen ============================ -->
+  <dialog id="dlg-backup" class="modal" aria-labelledby="dlg-backup-title">
+    <form method="dialog" class="modal-head">
+      <h2 id="dlg-backup-title">🔒 Backup einrichten</h2>
+      <button class="icon" value="cancel" aria-label="Schließen">✕</button>
+    </form>
+
+    <div class="modal-body">
+      <p>
+        Speichert Konten, Fixkosten und das Bitcoin-Modell verschlüsselt als Datei.
+        Auf jedem anderen Gerät liest du sie mit demselben PIN wieder ein.
+      </p>
+
+      <p class="callout">
+        <strong>Wichtig:</strong> Den PIN kennt niemand außer dir – auch diese App speichert ihn nicht.
+        Vergessener PIN heißt: Das Backup ist verloren.
+      </p>
+
+      <div class="choice">
+        <button type="button" class="choice-option" data-mode="pin" aria-pressed="true">
+          <strong>PIN</strong>
+          <span>4+ Ziffern, schnell</span>
+        </button>
+        <button type="button" class="choice-option" data-mode="password" aria-pressed="false">
+          <strong>Passwort</strong>
+          <span>8+ Zeichen, sicherer</span>
+        </button>
+      </div>
+
+      <label class="field">
+        <span data-role="secret-label">PIN (mindestens 4 Ziffern)</span>
+        <input type="password" id="backup-secret" inputmode="numeric" autocomplete="new-password" placeholder="z. B. 1234">
+      </label>
+
+      <label class="field">
+        <span>Wiederholen</span>
+        <input type="password" id="backup-confirm" inputmode="numeric" autocomplete="new-password">
+      </label>
+
+      <p class="hint warn" data-role="backup-error" hidden></p>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn" data-action="close-dialog">Abbrechen</button>
+      <button type="button" class="btn primary" data-action="backup-save">Backup-Datei speichern</button>
+    </div>
+  </dialog>
+
+  <!-- ============================ Backup laden ============================ -->
+  <dialog id="dlg-restore" class="modal" aria-labelledby="dlg-restore-title">
+    <form method="dialog" class="modal-head">
+      <h2 id="dlg-restore-title">Backup laden</h2>
+      <button class="icon" value="cancel" aria-label="Schließen">✕</button>
+    </form>
+
+    <div class="modal-body">
+      <p>Wähle eine Backup-Datei. Unverschlüsselte JSON-Exporte funktionieren hier ebenfalls.</p>
+
+      <button type="button" class="dropzone" data-action="pick-backup">
+        <strong data-role="restore-filename">Datei auswählen</strong>
+        <span>.json aus einem Backup dieser App</span>
+      </button>
+      <input type="file" id="restore-file" accept="application/json,.json" hidden>
+
+      <dl class="compare" data-role="restore-compare" hidden>
+        <div><dt>Stand der Datei</dt><dd data-role="restore-date">–</dd></div>
+        <div><dt>Inhalt</dt><dd data-role="restore-content">–</dd></div>
+        <div><dt>Verschlüsselt</dt><dd data-role="restore-encrypted">–</dd></div>
+      </dl>
+
+      <p class="hint" data-role="restore-age" hidden></p>
+
+      <label class="field" data-role="restore-secret-field" hidden>
+        <span data-role="restore-secret-label">PIN</span>
+        <input type="password" id="restore-secret" inputmode="numeric" autocomplete="current-password">
+      </label>
+
+      <p class="hint warn" data-role="restore-error" hidden></p>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn" data-action="close-dialog">Abbrechen</button>
+      <button type="button" class="btn primary" data-action="restore-apply" disabled>Wiederherstellen</button>
+    </div>
+  </dialog>
+
+  <!-- ============================ App installieren ============================ -->
+  <aside id="install-banner" class="install" hidden>
+    <div class="install-body">
+      <strong data-role="install-title">App installieren</strong>
+      <p data-role="install-text">
+        Lege das Kontenmodell als App auf den Startbildschirm – schneller Zugriff, funktioniert auch offline.
+      </p>
+      <ol class="install-steps" data-role="install-steps" hidden>
+        <li>Unten auf das Teilen-Symbol tippen</li>
+        <li><strong>„Zum Home-Bildschirm"</strong> wählen</li>
+        <li>Oben rechts auf <strong>„Hinzufügen"</strong> tippen</li>
+      </ol>
+      <div class="install-actions">
+        <button type="button" class="btn primary" data-action="install-app">Installieren</button>
+        <button type="button" class="btn" data-action="install-dismiss">Später</button>
+      </div>
+    </div>
+    <button type="button" class="icon" data-action="install-dismiss" aria-label="Hinweis schließen">✕</button>
+  </aside>
 
   <template id="tpl-bucket">
     <div class="row bucket">

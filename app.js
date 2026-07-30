@@ -759,6 +759,24 @@ document.addEventListener('click', (event) => {
   if (action === 'export') exportJson();
   if (action === 'import') $('#import-file').click();
 
+  if (action === 'backup-create') {
+    setBackupMode('pin');
+    backupDialog.showModal();
+    backupSecret.focus();
+  }
+  if (action === 'backup-save') saveBackup();
+
+  if (action === 'backup-restore') {
+    resetRestoreDialog();
+    restoreDialog.showModal();
+  }
+  if (action === 'pick-backup') $('#restore-file').click();
+  if (action === 'restore-apply') restoreBackup();
+  if (action === 'close-dialog') event.target.closest('dialog')?.close();
+
+  if (action === 'install-app') installApp();
+  if (action === 'install-dismiss') dismissInstall();
+
   if (action === 'reset') {
     if (!confirm('Konten, Fixkosten und Bitcoin-Modell auf die Standardwerte zurücksetzen?')) return;
     state = normalize(DEFAULT_DATA);
@@ -795,6 +813,411 @@ $('#import-file').addEventListener('change', async (event) => {
   }
 });
 
+/* ============================ Verschlüsseltes Backup ============================
+ *
+ * Schlüsselableitung: PBKDF2-SHA256, 200.000 Runden, fester App-Salt.
+ * Verschlüsselung:    AES-GCM-256 mit zufälligem 96-Bit-IV je Datei.
+ *
+ * Derselbe PIN erzeugt reproduzierbar denselben Schlüssel – die Datei lässt
+ * sich also auf jedem Gerät wieder öffnen. Der Salt darf öffentlich sein, er
+ * muss nur gleich bleiben. Gespeichert wird der PIN nirgends.
+ */
+
+const BACKUP_MAGIC = 'KM-BACKUP-1';
+const BACKUP_VERSION = 1;
+const APP_SALT = 'kontenmodell-backup-2026-v1';
+const PBKDF2_ITERATIONS = 200_000;
+const IV_BYTES = 12;
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const toBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+function fromBase64(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+async function deriveKey(secret) {
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    textEncoder.encode(secret),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey'],
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: textEncoder.encode(APP_SALT),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  );
+}
+
+/** Zählt nur Positionen – Beträge stehen ausschließlich im verschlüsselten Teil. */
+const summarize = (data) => ({
+  bucketCount: data.buckets.length,
+  fixedCostCount: data.fixedCosts.length,
+  walletCount: data.bitcoin.wallets.length,
+});
+
+async function createBackup(secret, mode, data) {
+  const key = await deriveKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    textEncoder.encode(JSON.stringify(data)),
+  );
+
+  return {
+    magic: BACKUP_MAGIC,
+    v: BACKUP_VERSION,
+    mode,
+    iv: toBase64(iv),
+    ciphertext: toBase64(ciphertext),
+    lastModified: new Date().toISOString(),
+    summary: summarize(data),
+  };
+}
+
+async function decryptBackup(secret, file) {
+  const key = await deriveKey(secret);
+  let plain;
+
+  try {
+    plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(file.iv) },
+      key,
+      fromBase64(file.ciphertext),
+    );
+  } catch {
+    throw new Error(`Falscher ${file.mode === 'password' ? 'Passwort' : 'PIN'} oder beschädigte Datei.`);
+  }
+
+  try {
+    return JSON.parse(textDecoder.decode(plain));
+  } catch {
+    throw new Error('Die entschlüsselten Daten sind unlesbar.');
+  }
+}
+
+const isBackupFile = (value) =>
+  Boolean(value) &&
+  typeof value === 'object' &&
+  value.magic === BACKUP_MAGIC &&
+  typeof value.iv === 'string' &&
+  typeof value.ciphertext === 'string';
+
+/** Erkennt sowohl verschlüsselte Backups als auch den einfachen JSON-Export. */
+async function parseAnyBackup(file) {
+  let parsed;
+  try {
+    parsed = JSON.parse(await file.text());
+  } catch {
+    throw new Error('Die Datei ist kein gültiges JSON.');
+  }
+
+  if (isBackupFile(parsed)) return { kind: 'encrypted', file: parsed };
+
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.buckets)) {
+    const data = normalize(parsed);
+    return {
+      kind: 'plain',
+      data,
+      summary: summarize(data),
+      lastModified: null,
+    };
+  }
+
+  throw new Error('Diese Datei sieht nicht nach einem Kontenmodell-Backup aus.');
+}
+
+/** Dateiname im Stil Kontenmodell_20260730_1830_MESZ_AES256.json */
+function backupFilename(iso) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  const day = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const time = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+
+  let zone = 'LOCAL';
+  try {
+    const parts = new Intl.DateTimeFormat('de-DE', { timeZoneName: 'short' }).formatToParts(d);
+    const found = parts.find((p) => p.type === 'timeZoneName')?.value;
+    if (found) zone = found.replace(/[^A-Za-z]/g, '');
+  } catch { /* Fallback bleibt LOCAL */ }
+
+  return `Kontenmodell_${day}_${time}_${zone}_AES256.json`;
+}
+
+function downloadJson(content, filename) {
+  const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Dialog „Backup einrichten" ---------- */
+
+const backupDialog = $('#dlg-backup');
+const backupSecret = $('#backup-secret');
+const backupConfirm = $('#backup-confirm');
+const backupError = $('[data-role="backup-error"]');
+
+let backupMode = 'pin';
+
+const secretRules = {
+  pin: { test: (v) => /^\d{4,}$/.test(v), label: 'PIN (mindestens 4 Ziffern)', hint: 'Der PIN muss aus mindestens 4 Ziffern bestehen.' },
+  password: { test: (v) => v.length >= 8, label: 'Passwort (mindestens 8 Zeichen)', hint: 'Das Passwort muss mindestens 8 Zeichen haben.' },
+};
+
+function setBackupMode(mode) {
+  backupMode = secretRules[mode] ? mode : 'pin';
+
+  for (const option of backupDialog.querySelectorAll('.choice-option')) {
+    option.setAttribute('aria-pressed', String(option.dataset.mode === backupMode));
+  }
+
+  $('[data-role="secret-label"]', backupDialog).textContent = secretRules[backupMode].label;
+  backupSecret.placeholder = backupMode === 'pin' ? 'z. B. 1234' : 'z. B. ein-langes-passwort-2026';
+  for (const input of [backupSecret, backupConfirm]) {
+    input.inputMode = backupMode === 'pin' ? 'numeric' : 'text';
+    input.value = '';
+  }
+  backupError.hidden = true;
+}
+
+backupDialog.addEventListener('click', (event) => {
+  const mode = event.target.closest('.choice-option')?.dataset.mode;
+  if (mode) setBackupMode(mode);
+});
+
+async function saveBackup() {
+  const secret = backupSecret.value;
+  const rule = secretRules[backupMode];
+
+  const problem =
+    !rule.test(secret) ? rule.hint :
+    secret !== backupConfirm.value ? 'Die beiden Eingaben stimmen nicht überein.' :
+    null;
+
+  if (problem) {
+    backupError.textContent = problem;
+    backupError.hidden = false;
+    return;
+  }
+
+  backupError.hidden = true;
+  const button = $('[data-action="backup-save"]', backupDialog);
+  button.disabled = true;
+  button.textContent = 'Verschlüssele …';
+
+  try {
+    const file = await createBackup(secret, backupMode, state);
+    downloadJson(file, backupFilename(file.lastModified));
+    backupSecret.value = '';
+    backupConfirm.value = '';
+    backupDialog.close();
+  } catch (err) {
+    backupError.textContent = 'Das Backup konnte nicht erstellt werden.';
+    backupError.hidden = false;
+    console.warn(err);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Backup-Datei speichern';
+  }
+}
+
+/* ---------- Dialog „Backup laden" ---------- */
+
+const restoreDialog = $('#dlg-restore');
+const restoreSecret = $('#restore-secret');
+const restoreError = $('[data-role="restore-error"]');
+const restoreApply = $('[data-action="restore-apply"]', restoreDialog);
+
+let pendingBackup = null;
+
+function resetRestoreDialog() {
+  pendingBackup = null;
+  restoreSecret.value = '';
+  restoreError.hidden = true;
+  restoreApply.disabled = true;
+  $('[data-role="restore-filename"]').textContent = 'Datei auswählen';
+  $('[data-role="restore-compare"]').hidden = true;
+  $('[data-role="restore-age"]').hidden = true;
+  $('[data-role="restore-secret-field"]').hidden = true;
+}
+
+function describeContent(summary) {
+  return `${summary.bucketCount} Konten · ${summary.fixedCostCount} Fixkosten · ${summary.walletCount} Wallets`;
+}
+
+async function pickBackupFile(file) {
+  resetRestoreDialog();
+  $('[data-role="restore-filename"]').textContent = file.name;
+
+  try {
+    pendingBackup = await parseAnyBackup(file);
+  } catch (err) {
+    restoreError.textContent = err.message;
+    restoreError.hidden = false;
+    return;
+  }
+
+  const encrypted = pendingBackup.kind === 'encrypted';
+  const summary = encrypted ? pendingBackup.file.summary : pendingBackup.summary;
+  const stamp = encrypted ? pendingBackup.file.lastModified : pendingBackup.lastModified;
+
+  $('[data-role="restore-date"]').textContent = stamp
+    ? new Date(stamp).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+    : 'unbekannt';
+  $('[data-role="restore-content"]').textContent = summary ? describeContent(summary) : 'unbekannt';
+  $('[data-role="restore-encrypted"]').textContent = encrypted
+    ? `ja – ${pendingBackup.file.mode === 'password' ? 'Passwort' : 'PIN'} nötig`
+    : 'nein (einfacher JSON-Export)';
+  $('[data-role="restore-compare"]').hidden = false;
+
+  const age = $('[data-role="restore-age"]');
+  age.textContent = 'Beim Wiederherstellen wird der aktuelle Stand vollständig ersetzt.';
+  age.hidden = false;
+
+  const field = $('[data-role="restore-secret-field"]');
+  field.hidden = !encrypted;
+  if (encrypted) {
+    const isPin = pendingBackup.file.mode !== 'password';
+    $('[data-role="restore-secret-label"]').textContent = isPin ? 'PIN' : 'Passwort';
+    restoreSecret.inputMode = isPin ? 'numeric' : 'text';
+    restoreSecret.focus();
+  }
+
+  restoreApply.disabled = false;
+}
+
+function applyRestoredData(data) {
+  state = normalize(data);
+  incomeInput.value = plain.format(state.income);
+  save();
+  renderRows();
+}
+
+async function restoreBackup() {
+  if (!pendingBackup) return;
+
+  restoreError.hidden = true;
+  restoreApply.disabled = true;
+  restoreApply.textContent = 'Entschlüssele …';
+
+  try {
+    const data =
+      pendingBackup.kind === 'encrypted'
+        ? await decryptBackup(restoreSecret.value, pendingBackup.file)
+        : pendingBackup.data;
+
+    applyRestoredData(data);
+    resetRestoreDialog();
+    restoreDialog.close();
+  } catch (err) {
+    restoreError.textContent = err.message;
+    restoreError.hidden = false;
+    restoreApply.disabled = false;
+  } finally {
+    restoreApply.textContent = 'Wiederherstellen';
+  }
+}
+
+$('#restore-file').addEventListener('change', (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (file) pickBackupFile(file);
+});
+
+restoreSecret.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') restoreBackup();
+});
+
+/* ============================ App installieren ============================ */
+
+const INSTALL_KEY = 'kontenmodell.install-dismissed';
+const INSTALL_PAUSE = 7 * 24 * 60 * 60 * 1000;
+
+const installBanner = $('#install-banner');
+let installPrompt = null;
+
+const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+const isInstalled = () =>
+  window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+function recentlyDismissed() {
+  try {
+    const stamp = Number(localStorage.getItem(INSTALL_KEY));
+    return Boolean(stamp) && Date.now() - stamp < INSTALL_PAUSE;
+  } catch {
+    return false;
+  }
+}
+
+function setupInstallPrompt() {
+  if (isInstalled() || recentlyDismissed()) return;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    installBanner.hidden = false;
+  });
+
+  /* iOS kennt beforeinstallprompt nicht – dort hilft nur die Anleitung. */
+  if (isIos()) setTimeout(() => { installBanner.hidden = false; }, 3000);
+
+  window.addEventListener('appinstalled', () => { installBanner.hidden = true; });
+}
+
+async function installApp() {
+  if (isIos() || !installPrompt) {
+    $('[data-role="install-title"]').textContent = 'Auf dem iPhone hinzufügen';
+    $('[data-role="install-text"]').hidden = true;
+    $('[data-role="install-steps"]').hidden = false;
+    $('[data-action="install-app"]').hidden = true;
+    return;
+  }
+
+  await installPrompt.prompt();
+  const choice = await installPrompt.userChoice;
+  installPrompt = null;
+  if (choice.outcome === 'accepted') installBanner.hidden = true;
+}
+
+function dismissInstall() {
+  installBanner.hidden = true;
+  try {
+    localStorage.setItem(INSTALL_KEY, String(Date.now()));
+  } catch { /* ohne Speicher erscheint der Hinweis beim nächsten Mal wieder */ }
+}
+
+/* Der Service Worker macht die App offline nutzbar – über file:// gibt es ihn
+   nicht, dort bleibt es bei der normalen Seite. */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('Service Worker nicht registriert:', err);
+    });
+  });
+}
+
 /* ---------- Start ---------- */
 
 renderRows();
@@ -804,3 +1227,6 @@ try {
   startTab = localStorage.getItem(TAB_KEY) || 'privat';
 } catch { /* ohne Speicher startet immer das Privatmodell */ }
 showTab(startTab);
+
+setupInstallPrompt();
+registerServiceWorker();

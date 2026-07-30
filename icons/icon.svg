@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Kontenmodell">
+  <rect width="512" height="512" rx="112" fill="#171b23"/>
+  <g>
+    <rect x="96" y="120" width="320" height="44" rx="22" fill="#e0803c"/>
+    <rect x="96" y="196" width="240" height="44" rx="22" fill="#5b8def"/>
+    <rect x="96" y="272" width="176" height="44" rx="22" fill="#d4589a"/>
+    <rect x="96" y="348" width="112" height="44" rx="22" fill="#5fbf5f"/>
+  </g>
+</svg>

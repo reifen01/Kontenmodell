@@ -65,8 +65,11 @@
 /* Ein eigenes display (flex, grid …) sticht sonst das hidden-Attribut aus. */
 [hidden] { display: none !important; }
 
+html { overflow-x: clip; }
+
 body {
   margin: 0;
+  overflow-x: clip;
   background: var(--bg);
   color: var(--text);
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -674,6 +677,20 @@ input[disabled] { opacity: .45; }
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* ---------- Touch-Bedienung ---------- */
+
+@media (pointer: coarse) {
+  /* Unter 16px zoomt iOS beim Antippen eines Feldes hinein – danach lässt
+     sich die Seite hin- und herschieben. */
+  input, select { font-size: 16px; }
+  input.note { font-size: 16px; padding: 6px 10px; }
+
+  /* Fingerfreundliche Trefferflächen für ✕ und ? */
+  .icon { width: 40px; height: 40px; font-size: 16px; }
+  .hint-dot { width: 32px; height: 32px; font-size: 15px; }
+  .swatch { height: 40px; }
 }
 
 /* ---------- Mobil ---------- */

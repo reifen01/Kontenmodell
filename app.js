@@ -22,6 +22,7 @@ const PALETTE = [
   'var(--c-urlaub)',
   'var(--c-invest)',
   'var(--c-steuer)',
+  'var(--c-spende)',
 ];
 
 const DEFAULT_DATA = {
@@ -33,6 +34,7 @@ const DEFAULT_DATA = {
     { id: 'nmovvh1', name: 'Urlaub', note: 'Reisekasse', mode: 'percent', value: 5, color: 'var(--c-urlaub)' },
     { id: 'qr0ws1l', name: 'Investment', note: 'ETF / Sparplan', mode: 'percent', value: 15, color: 'var(--c-invest)' },
     { id: '1r2sdei', name: 'Steuerrücklage', note: 'für Nachzahlungen', mode: 'percent', value: 0, color: 'var(--c-steuer)' },
+    { id: 'k7xd2pv', name: 'Spendenkonto', note: 'Spenden / Geben', mode: 'percent', value: 0, color: 'var(--c-spende)' },
   ],
   fixedCosts: [
     { id: 'slbhko3', name: 'Miete / Wohnen', amount: 900, freq: 'monthly' },

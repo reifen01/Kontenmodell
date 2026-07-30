@@ -53,7 +53,7 @@ exportieren und wieder importieren:
 ```
 
 Die Kontofarben referenzieren CSS-Variablen (`--c-risiko`, `--c-fix`,
-`--c-lifestyle`, `--c-urlaub`, `--c-invest`, `--c-steuer`), die in
+`--c-lifestyle`, `--c-urlaub`, `--c-invest`, `--c-steuer`, `--c-spende`), die in
 `styles.css` definiert sind. Dort lässt sich auch die Farbgebung anpassen;
 Hell- und Dunkelmodus folgen den Systemeinstellungen.
 

@@ -96,17 +96,20 @@ So zeigt der Lade-Dialog Datum und Umfang an, bevor der PIN abgefragt wird.
 Der PIN wird nirgends gespeichert: Geht er verloren, ist die Datei nicht mehr
 lesbar. Der Lade-Dialog akzeptiert auch unverschlüsselte JSON-Exporte.
 
-## Veröffentlichen (GitHub Pages)
+## Veröffentlichen (Vercel)
 
-`.github/workflows/pages.yml` veröffentlicht den Repo-Inhalt bei jedem Push auf
-`main` – ohne Build-Schritt, die Dateien gehen unverändert online. Der Workflow
-schaltet Pages beim ersten Lauf selbst ein (`configure-pages` mit
-`enablement: true`), lässt sich unter *Actions → GitHub Pages* aber auch von
-Hand starten.
+Das Repository ist bei Vercel eingebunden: Jeder Push auf `main` wird
+automatisch ausgeliefert. Gebaut wird nichts – `vercel.json` schaltet den
+Build-Schritt ab und liefert die Dateien unverändert aus. Zwei Kopfzeilen sind
+dabei wichtig:
 
-Adresse danach: `https://<benutzer>.github.io/Kontenmodell/`. Alle Pfade in der
-App sind relativ, Service Worker und Manifest funktionieren unter diesem
-Unterpfad. Für ein privates Repository braucht Pages einen bezahlten GitHub-Plan.
+- `sw.js` wird nicht zwischengespeichert, sonst findet die App keine neue Fassung.
+- Icons dürfen eine Woche im Cache bleiben.
+
+`.vercelignore` hält Build-Skript und README aus dem Deployment heraus.
+
+Alle Pfade in der App sind relativ – sie läuft daher genauso unter einem
+Unterpfad wie unter einer eigenen Domain.
 
 ## Als App installieren
 

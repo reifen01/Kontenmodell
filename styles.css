@@ -29,6 +29,8 @@
   --gap: 16px;
 }
 
+/* Helles Schema: einmal für die Systemeinstellung, einmal für eine
+   ausdrückliche Wahl (data-theme), die die Systemeinstellung überstimmt. */
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #f4f6fa;
@@ -38,6 +40,24 @@
     --text: #1b2029;
     --text-dim: #667287;
   }
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f0f2f7;
+  --line: #dfe4ec;
+  --text: #1b2029;
+  --text-dim: #667287;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1218;
+  --surface: #171b23;
+  --surface-2: #1e232d;
+  --line: #2a3040;
+  --text: #e8ecf3;
+  --text-dim: #9aa4b5;
 }
 
 * { box-sizing: border-box; }

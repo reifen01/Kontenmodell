@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kontenmodell – Einkommensaufteilung</title>
+  <style>
+:root {
+  /* Kontenfarben – von den Buckets über var(--c-*) referenziert */
+  --c-risiko: #e0803c;
+  --c-fix: #5b8def;
+  --c-lifestyle: #d4589a;
+  --c-urlaub: #35b0a7;
+  --c-invest: #5fbf5f;
+  --c-steuer: #a07ce0;
+  --c-spende: #d9a521;
+  --c-rest: #8a94a6;
+
+  /* Wallet-Farben im Bitcoin-Modell */
+  --c-hot: #f7931a;
+  --c-cold: #4aa3df;
+  --c-coldpp: #3d6fb4;
+  --c-multisig: #7d63c8;
+
+  --bg: #0f1218;
+  --surface: #171b23;
+  --surface-2: #1e232d;
+  --line: #2a3040;
+  --text: #e8ecf3;
+  --text-dim: #9aa4b5;
+  --accent: #5b8def;
+  --danger: #e2564a;
+  --ok: #5fbf5f;
+
+  --radius: 12px;
+  --gap: 16px;
+}
+
+/* Helles Schema: einmal für die Systemeinstellung, einmal für eine
+   ausdrückliche Wahl (data-theme), die die Systemeinstellung überstimmt. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f7;
+    --line: #dfe4ec;
+    --text: #1b2029;
+    --text-dim: #667287;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f0f2f7;
+  --line: #dfe4ec;
+  --text: #1b2029;
+  --text-dim: #667287;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1218;
+  --surface: #171b23;
+  --surface-2: #1e232d;
+  --line: #2a3040;
+  --text: #e8ecf3;
+  --text-dim: #9aa4b5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2 { margin: 0; font-weight: 600; }
+h1 { font-size: 20px; letter-spacing: .2px; }
+h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .8px; }
+
+/* ---------- Kopfzeile ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.tab {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px #0003;
+}
+
+.panel { display: flex; flex-direction: column; gap: var(--gap); }
+.panel[hidden] { display: none; }
+
+.income { display: flex; align-items: center; gap: 10px; }
+.income label { color: var(--text-dim); font-size: 13px; }
+
+.income-field { position: relative; }
+.income-field input {
+  width: 140px;
+  padding-right: 26px;
+  text-align: right;
+  font-size: 17px;
+  font-weight: 600;
+}
+.income-field .unit {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+/* ---------- Layout ---------- */
+
+main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--gap) 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  margin-bottom: 14px;
+}
+
+.summary h2 { margin-bottom: 14px; }
+
+/* ---------- Balken ---------- */
+
+.bar {
+  display: flex;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  margin-bottom: 18px;
+}
+
+.bar span {
+  transition: width .18s ease;
+  min-width: 0;
+}
+
+.bar.over { box-shadow: inset 0 0 0 2px var(--danger); }
+
+/* ---------- Summen ---------- */
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.totals dt { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+.totals dd { margin: 2px 0 0; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.totals dd.negative { color: var(--danger); }
+.totals dd.positive { color: var(--ok); }
+
+/* ---------- Tabellen ---------- */
+
+.table { display: flex; flex-direction: column; }
+
+.row {
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.buckets .row { grid-template-columns: minmax(160px, 2.2fr) 126px 108px 108px 74px 96px 32px; }
+.fixed .row   { grid-template-columns: minmax(180px, 2.2fr) 130px 150px 110px 32px; }
+.wallets .row { grid-template-columns: minmax(190px, 2.2fr) 152px 116px 120px 80px 32px; }
+
+.row.head {
+  padding-bottom: 8px;
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+.row:last-child { border-bottom: 0; }
+
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: var(--text-dim); }
+
+.name-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.name-stack { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+
+.swatch {
+  width: 10px;
+  height: 32px;
+  border-radius: 5px;
+  background: var(--swatch, var(--c-rest));
+  flex: none;
+}
+
+.value-cell { position: relative; }
+.value-cell input { width: 100%; padding-right: 28px; text-align: right; }
+.value-cell .unit {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.row-actions { display: flex; justify-content: flex-end; }
+
+/* ---------- Formularelemente ---------- */
+
+input, select {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+input.note { font-size: 12.5px; color: var(--text-dim); padding: 4px 10px; }
+input[disabled] { opacity: .45; }
+
+.btn {
+  padding: 7px 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+.icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.icon:hover { color: var(--danger); border-color: var(--line); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Eingabefelder im Bitcoin-Tab ---------- */
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.fields label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fields label > span:first-child {
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+/* "sats" braucht mehr Platz als ein Währungszeichen */
+#btc-target { padding-right: 46px; }
+
+.readout {
+  padding: 7px 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Hilfe ---------- */
+
+.help p { margin: 0 0 12px; max-width: 68ch; }
+.help p:last-child { margin-bottom: 0; }
+.help h3 { margin: 0 0 6px; font-size: 14.5px; font-weight: 600; }
+
+.lead { color: var(--text-dim); margin-top: -4px; }
+
+.numbered {
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.numbered li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 38px;
+  max-width: 72ch;
+}
+
+.numbered li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.numbered strong { display: block; margin-bottom: 2px; }
+
+.rules {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.rule {
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--c-invest);
+  border-radius: 10px;
+}
+.rule:nth-child(2) { border-left-color: var(--c-risiko); }
+.rule:nth-child(3) { border-left-color: var(--c-lifestyle); }
+.rule p { font-size: 14px; color: var(--text-dim); margin: 0; }
+
+.pairs { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.pairs > div {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+.pairs dt { font-weight: 600; }
+.pairs dd { margin: 0; color: var(--text-dim); }
+
+.ticks { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.ticks li { position: relative; padding-left: 26px; max-width: 72ch; }
+.ticks li::before { content: "→"; position: absolute; left: 0; color: var(--c-hot); }
+
+.quote {
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+@media (max-width: 620px) {
+  .pairs > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* ---------- Ablauf ---------- */
+
+.flow {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.flow li {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  padding-right: 18px;
+}
+
+.flow li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: 0;
+  top: 8px;
+  color: var(--text-dim);
+}
+
+.flow-box {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--c-hot);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.flow li:nth-child(3) .flow-box { border-left-color: var(--c-cold); }
+.flow li:nth-child(4) .flow-box { border-left-color: var(--c-coldpp); }
+
+.flow-note { color: var(--text-dim); font-size: 12.5px; padding-left: 2px; }
+
+.hint { margin: 14px 0 0; color: var(--text-dim); font-size: 13px; }
+.hint.warn { color: var(--danger); }
+
+/* ---------- Mobil ---------- */
+
+@media (max-width: 820px) {
+  /* Auf kleinen Displays braucht die Kopfzeile zwei Zeilen – dann lieber mitscrollen. */
+  .topbar { position: static; }
+  .topbar-inner { padding: 12px 16px; }
+  main { padding: var(--gap) 16px 48px; }
+  .card { padding: 16px; }
+
+  .buckets .row, .fixed .row, .wallets .row { grid-template-columns: 1fr 1fr; }
+  .row.head { display: none; }
+  .flow li { padding-right: 0; }
+  .flow li:not(:last-child)::after { content: none; }
+
+  .row.bucket, .row.fixed-row, .row.wallet {
+    padding: 14px 0;
+    gap: 8px;
+  }
+
+  .name-cell { grid-column: 1 / -1; }
+  .buckets .row [data-role="yearly"],
+  .buckets .row [data-role="share"],
+  .wallets .row [data-role="share"] { display: none; }
+  .row-actions { grid-column: 2; }
+  .fixed .row [data-role="monthly"] { grid-column: 1; }
+
+  .num[data-role="monthly"]::before {
+    content: "pro Monat ";
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .wallets .num[data-role="amount"]::before {
+    content: "Betrag ";
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <h1>Kontenmodell</h1>
+
+      <nav class="tabs" role="tablist" aria-label="Modell">
+        <button type="button" class="tab" role="tab" id="tab-privat" data-tab="privat"
+                aria-controls="panel-privat" aria-selected="true">Privat</button>
+        <button type="button" class="tab" role="tab" id="tab-bitcoin" data-tab="bitcoin"
+                aria-controls="panel-bitcoin" aria-selected="false">Bitcoin</button>
+        <button type="button" class="tab" role="tab" id="tab-hilfe" data-tab="hilfe"
+                aria-controls="panel-hilfe" aria-selected="false" title="Hilfe" aria-label="Hilfe">?</button>
+      </nav>
+
+      <div class="income">
+        <label for="income">Monatliches Nettoeinkommen</label>
+        <div class="income-field">
+          <input id="income" type="text" inputmode="decimal" autocomplete="off">
+          <span class="unit">€</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============================ Privates Kontomodell ============================ -->
+    <div id="panel-privat" role="tabpanel" aria-labelledby="tab-privat" class="panel" data-panel="privat">
+      <section class="card summary" aria-labelledby="summary-title">
+        <h2 id="summary-title">Übersicht</h2>
+
+        <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+
+        <dl class="totals">
+          <div>
+            <dt>Zugeteilt</dt>
+            <dd data-role="total-allocated">–</dd>
+          </div>
+          <div>
+            <dt>Fixkosten (monatlich)</dt>
+            <dd data-role="total-fixed">–</dd>
+          </div>
+          <div>
+            <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
+            <dd data-role="total-rest">–</dd>
+          </div>
+          <div>
+            <dt>Fixkostenquote</dt>
+            <dd data-role="fixed-rate">–</dd>
+          </div>
+          <div>
+            <dt>Konten</dt>
+            <dd data-role="bucket-count">–</dd>
+          </div>
+        </dl>
+
+        <p class="hint" data-role="warning" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="buckets-title">
+        <div class="card-head">
+          <h2 id="buckets-title">Konten</h2>
+          <button type="button" class="btn" data-action="add-bucket">+ Konto</button>
+        </div>
+
+        <div class="table buckets" id="buckets">
+          <div class="row head" aria-hidden="true">
+            <span>Konto</span>
+            <span>Modus</span>
+            <span>Wert</span>
+            <span class="num">pro Monat</span>
+            <span class="num">Anteil</span>
+            <span class="num">pro Jahr</span>
+            <span></span>
+          </div>
+          <div id="bucket-rows"></div>
+        </div>
+
+        <p class="hint">
+          <strong>Prozent</strong> = Anteil vom Einkommen · <strong>Fester Betrag</strong> = feste Summe ·
+          <strong>Fixkosten</strong> = Summe aller Fixkosten unten · <strong>Rest</strong> = was übrig bleibt.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="fixed-title">
+        <div class="card-head">
+          <h2 id="fixed-title">Fixkosten</h2>
+          <button type="button" class="btn" data-action="add-fixed">+ Position</button>
+        </div>
+
+        <div class="table fixed" id="fixed">
+          <div class="row head" aria-hidden="true">
+            <span>Position</span>
+            <span class="num">Betrag</span>
+            <span>Turnus</span>
+            <span class="num">pro Monat</span>
+            <span></span>
+          </div>
+          <div id="fixed-rows"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================ Bitcoin-Kontomodell ============================ -->
+    <div id="panel-bitcoin" role="tabpanel" aria-labelledby="tab-bitcoin" class="panel" data-panel="bitcoin" hidden>
+      <section class="card" aria-labelledby="flow-title">
+        <h2 id="flow-title">Ablauf</h2>
+        <ol class="flow">
+          <li><span class="flow-box">Investmentkonto</span><span class="flow-note">monatliche Sparrate</span></li>
+          <li><span class="flow-box">Sparplan (DCA)</span><span class="flow-note">täglich · wöchentlich · monatlich</span></li>
+          <li><span class="flow-box">Cold Wallet</span><span class="flow-note">Käufe sammeln sich an</span></li>
+          <li><span class="flow-box">Cold + Passphrase</span><span class="flow-note">konsolidiert, langfristig</span></li>
+        </ol>
+        <p class="hint">
+          Das Hot Wallet wird bei Bedarf aus dem Cold Wallet befüllt. Multisig kommt erst
+          bei großen Beständen dazu und wird danach nicht mehr angefasst.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="plan-title">
+        <h2 id="plan-title">Sparplan &amp; UTXO-Größe</h2>
+
+        <div class="fields">
+          <label>
+            <span>Sparrate</span>
+            <select id="btc-source"></select>
+          </label>
+          <label>
+            <span>… pro Monat</span>
+            <span class="value-cell">
+              <input id="btc-rate" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">€</span>
+            </span>
+          </label>
+          <label>
+            <span>Intervall</span>
+            <select id="btc-interval">
+              <option value="daily">täglich</option>
+              <option value="weekly">wöchentlich</option>
+              <option value="monthly">monatlich</option>
+            </select>
+          </label>
+          <label>
+            <span>Bitcoin-Kurs</span>
+            <span class="value-cell">
+              <input id="btc-price" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">€</span>
+            </span>
+          </label>
+          <label>
+            <span>Ziel-UTXO</span>
+            <span class="value-cell">
+              <input id="btc-target" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">sats</span>
+            </span>
+          </label>
+        </div>
+
+        <dl class="totals">
+          <div>
+            <dt>Pro Kauf</dt>
+            <dd data-role="btc-per-buy">–</dd>
+          </div>
+          <div>
+            <dt>Sats pro Kauf</dt>
+            <dd data-role="btc-sats-buy">–</dd>
+          </div>
+          <div>
+            <dt>Ziel-UTXO in Euro</dt>
+            <dd data-role="btc-target-eur">–</dd>
+          </div>
+          <div>
+            <dt>Käufe bis Zielgröße</dt>
+            <dd data-role="btc-buys">–</dd>
+          </div>
+          <div>
+            <dt>Dauer bis Konsolidierung</dt>
+            <dd data-role="btc-months">–</dd>
+          </div>
+        </dl>
+
+        <p class="hint" data-role="btc-utxo-hint"></p>
+      </section>
+
+      <section class="card" aria-labelledby="wallets-title">
+        <div class="card-head">
+          <h2 id="wallets-title">Wallet-Struktur</h2>
+          <button type="button" class="btn" data-action="add-wallet">+ Wallet</button>
+        </div>
+
+        <div class="fields">
+          <label>
+            <span>Bitcoin-Bestand</span>
+            <span class="value-cell">
+              <input id="btc-holdings" type="text" inputmode="decimal" autocomplete="off">
+              <span class="unit">€</span>
+            </span>
+          </label>
+          <label>
+            <span>entspricht</span>
+            <output class="readout" data-role="btc-holdings-btc">–</output>
+          </label>
+        </div>
+
+        <div class="bar" id="btc-bar" role="img" aria-label="Aufteilung des Bitcoin-Bestands"></div>
+
+        <div class="table wallets" id="wallets">
+          <div class="row head" aria-hidden="true">
+            <span>Wallet</span>
+            <span>Modus</span>
+            <span>Wert</span>
+            <span class="num">Betrag</span>
+            <span class="num">Anteil</span>
+            <span></span>
+          </div>
+          <div id="wallet-rows"></div>
+        </div>
+
+        <p class="hint" data-role="btc-wallet-warning" hidden></p>
+        <p class="hint" data-role="btc-multisig-hint"></p>
+      </section>
+    </div>
+
+    <!-- ============================ Hilfe ============================ -->
+    <div id="panel-hilfe" role="tabpanel" aria-labelledby="tab-hilfe" class="panel help" data-panel="hilfe" hidden>
+      <section class="card" aria-labelledby="pareto-title">
+        <h2 id="pareto-title">Das Wesentliche</h2>
+        <p class="lead">Sechs Punkte. Wer nur die umsetzt, hat den größten Teil des Nutzens.</p>
+
+        <ol class="numbered">
+          <li>
+            <strong>Ein Konto für den Geldeingang, mehrere für den Zweck.</strong>
+            Alle Einkünfte laufen auf einem Konto zusammen und werden von dort verteilt.
+            Was liegen bleibt, ist Puffer für Kontogebühren – kein Versehen.
+          </li>
+          <li>
+            <strong>Fixkosten einmal vollständig aufschreiben.</strong>
+            Jahres- und Quartalsbeiträge auf den Monat herunterrechnen und monatlich zurücklegen.
+            Wer seine Fixkostenquote kennt, kennt seinen Spielraum.
+          </li>
+          <li>
+            <strong>Risikorücklage zuerst.</strong>
+            Defekte Waschmaschine, Blitzerfoto, Nebenkostennachzahlung – das sind keine
+            Überraschungen, sondern Statistik. Ein Topf dafür nimmt ihnen den Schrecken.
+          </li>
+          <li>
+            <strong>Das Lifestyle-Konto darf leer werden.</strong>
+            Genau dafür ist es da. Solange die anderen Konten bedient sind, braucht es
+            beim Einkaufen kein Kopfrechnen und kein schlechtes Gewissen.
+          </li>
+          <li>
+            <strong>Gehaltserhöhungen vorher verteilen.</strong>
+            Sonst versickern sie unbemerkt im Alltag. Erst entscheiden, wohin die
+            zusätzlichen Euro gehen, dann ausgeben.
+          </li>
+          <li>
+            <strong>Getrennte Banken statt Unterkonten in einer App.</strong>
+            An die Risikorücklage soll man nicht in zwei Sekunden herankommen –
+            die kleine Hürde ist der eigentliche Schutz.
+          </li>
+        </ol>
+      </section>
+
+      <section class="card" aria-labelledby="rules-title">
+        <h2 id="rules-title">Drei Regeln</h2>
+        <div class="rules">
+          <div class="rule">
+            <h3>Lifestyle-Inflation</h3>
+            <p>
+              Mehr Gehalt führt oft zu höheren Fixkosten statt zu mehr Freiheit.
+              Nach ein paar Monaten fühlt sich das größere Einkommen normal an –
+              geblieben ist nur die höhere Grundlast.
+            </p>
+          </div>
+          <div class="rule">
+            <h3>Kaum etwas ist unvorhersehbar</h3>
+            <p>
+              Die meisten „unerwarteten" Ausgaben sind nur ungeplant. Geräte gehen
+              kaputt, Versicherungen werden fällig, Autos brauchen Reparaturen.
+              Planbar ist das alles.
+            </p>
+          </div>
+          <div class="rule">
+            <h3>Geld liebt Ordnung</h3>
+            <p>
+              Vermögende leisten sich Strukturen, die ihr Geld ordnen. Im Kleinen
+              ist die Kontostruktur genau das – nur ohne Family Office.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="setup-title">
+        <h2 id="setup-title">In vier Schritten einrichten</h2>
+        <ol class="numbered">
+          <li><strong>Fixkosten sammeln.</strong> Im Tab <em>Privat</em> unten eintragen, Turnus wählen – die Monatswerte rechnet die Seite aus.</li>
+          <li><strong>Konten festlegen.</strong> Beträge oder Prozente so lange verschieben, bis die Aufteilung zum eigenen Leben passt.</li>
+          <li><strong>Konten eröffnen.</strong> Daueraufträge auf den Tag nach dem Gehaltseingang legen, damit die Verteilung von allein läuft.</li>
+          <li><strong>Nach zwei bis drei Monaten nachjustieren.</strong> Meist ist das Lifestyle-Konto zu knapp oder die Risikorücklage zu niedrig.</li>
+        </ol>
+      </section>
+
+      <section class="card" aria-labelledby="banks-title">
+        <h2 id="banks-title">Welches Konto bei welcher Bank</h2>
+        <dl class="pairs">
+          <div><dt>Geldeingang</dt><dd>Hausbank mit festem Ansprechpartner – hier entsteht über Jahre eine saubere Historie, die bei Krediten hilft.</dd></div>
+          <div><dt>Risikorücklage</dt><dd>Andere Bank, am besten ohne Karte. Zugriff nur bewusst über das Online-Banking.</dd></div>
+          <div><dt>Urlaub</dt><dd>Konto, das im Ausland zuverlässig funktioniert und mehrere Währungen kann.</dd></div>
+          <div><dt>Lifestyle</dt><dd>Schnelle App-Bank für den Alltag – hier läuft die Karte, mit der bezahlt wird.</dd></div>
+          <div><dt>Investment</dt><dd>Passend zum Anlageziel: Depot für Wertpapiere, Sparplan-Anbieter für Bitcoin.</dd></div>
+        </dl>
+        <p class="hint">
+          Mehrere Konten verderben den Schufa-Score nicht, solange keines ins Minus rutscht –
+          aber alle auf einmal zu eröffnen, muss nicht sein.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="btc-help-title">
+        <h2 id="btc-help-title">Bitcoin in drei Sätzen</h2>
+        <ul class="ticks">
+          <li>Der Sparplan läuft auf die Hardware-Wallet; auf dem Hot Wallet liegt nur so viel wie in einer Brieftasche.</li>
+          <li>Viele kleine Käufe erzeugen viele kleine UTXOs – erst ab der Zielgröße konsolidiert auf die Passphrase-Wallet schicken, sonst wird das Ausgeben später teuer.</li>
+          <li>Multisig ist ein Werkzeug für große Bestände, nicht für die ersten Ersparnisse.</li>
+        </ul>
+      </section>
+
+      <section class="card" aria-labelledby="discipline-title">
+        <h2 id="discipline-title">Disziplin</h2>
+        <p class="quote">Disziplin ist der Preis für Freiheit.</p>
+        <p>
+          Disziplin heißt hier nichts anderes als: sich für das entscheiden, was man
+          langfristig will, gegen das, was kurzfristig ablenkt. Wer diese Entscheidung
+          jeden Tag neu treffen muss, verliert sie irgendwann – deshalb wird sie einmal
+          getroffen und in eine Struktur gegossen.
+        </p>
+        <p>
+          Genau das leisten die Konten: Sie nehmen dir die tägliche Einzelentscheidung ab.
+          Du schränkst dich damit nicht ein, sondern verhandelst einmal mit dir selbst,
+          wofür dein Geld da sein soll – und hältst dich anschließend nicht mehr selbst auf.
+        </p>
+        <p class="hint">
+          Inhaltlich zusammengefasst aus der Folge zum Kontenmodell von „Der Bitcoin Podcast"
+          (Florian Bruce). Keine Finanz- oder Steuerberatung.
+        </p>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="data-title">
+      <div class="card-head">
+        <h2 id="data-title">Daten</h2>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" data-action="export">Als JSON exportieren</button>
+        <button type="button" class="btn" data-action="import">JSON importieren</button>
+        <button type="button" class="btn danger" data-action="reset">Zurücksetzen</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <p class="hint">Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.</p>
+    </section>
+  </main>
+
+  <template id="tpl-bucket">
+    <div class="row bucket">
+      <span class="name-cell">
+        <span class="swatch" data-role="swatch"></span>
+        <span class="name-stack">
+          <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
+          <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
+        </span>
+      </span>
+      <span>
+        <select data-field="mode">
+          <option value="percent">Prozent</option>
+          <option value="fixed">Fester Betrag</option>
+          <option value="linked">Fixkosten</option>
+          <option value="rest">Rest</option>
+        </select>
+      </span>
+      <span class="value-cell">
+        <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
+        <span class="unit" data-role="value-unit"></span>
+      </span>
+      <span class="num" data-role="monthly">–</span>
+      <span class="num muted" data-role="share">–</span>
+      <span class="num muted" data-role="yearly">–</span>
+      <span class="row-actions">
+        <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
+      </span>
+    </div>
+  </template>
+
+  <template id="tpl-fixed">
+    <div class="row fixed-row">
+      <span><input type="text" data-field="name" placeholder="Bezeichnung" autocomplete="off"></span>
+      <span class="value-cell">
+        <input type="text" inputmode="decimal" data-field="amount" class="num" autocomplete="off">
+        <span class="unit">€</span>
+      </span>
+      <span>
+        <select data-field="freq">
+          <option value="monthly">monatlich</option>
+          <option value="quarterly">quartalsweise</option>
+          <option value="halfyearly">halbjährlich</option>
+          <option value="yearly">jährlich</option>
+        </select>
+      </span>
+      <span class="num" data-role="monthly">–</span>
+      <span class="row-actions">
+        <button type="button" class="icon" data-action="remove-fixed" aria-label="Position entfernen">✕</button>
+      </span>
+    </div>
+  </template>
+
+  <template id="tpl-wallet">
+    <div class="row wallet">
+      <span class="name-cell">
+        <span class="swatch" data-role="swatch"></span>
+        <span class="name-stack">
+          <input type="text" data-field="name" placeholder="Wallet" autocomplete="off">
+          <input type="text" data-field="note" class="note" placeholder="Zweck" autocomplete="off">
+        </span>
+      </span>
+      <span>
+        <select data-field="mode">
+          <option value="percent">Prozent</option>
+          <option value="fixed">Fester Betrag</option>
+          <option value="rest">Rest</option>
+        </select>
+      </span>
+      <span class="value-cell">
+        <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
+        <span class="unit" data-role="value-unit"></span>
+      </span>
+      <span class="num" data-role="amount">–</span>
+      <span class="num muted" data-role="share">–</span>
+      <span class="row-actions">
+        <button type="button" class="icon" data-action="remove-wallet" aria-label="Wallet entfernen">✕</button>
+      </span>
+    </div>
+  </template>
+  <script>
+/* Kontenmodell – Aufteilung des Nettoeinkommens auf Konten ("Buckets").
+   Alles läuft im Browser, gespeichert wird in localStorage. */
+
+'use strict';
+
+const STORAGE_KEY = 'kontenmodell.v1';
+
+/* Umrechnung eines Turnus auf einen Monatswert */
+const FREQ_FACTOR = {
+  monthly: 1,
+  quarterly: 1 / 3,
+  halfyearly: 1 / 6,
+  yearly: 1 / 12,
+};
+
+const MODES = ['percent', 'fixed', 'linked', 'rest'];
+const WALLET_MODES = ['percent', 'fixed', 'rest'];
+
+/* Sparplan-Käufe pro Monat je Intervall */
+const INTERVAL_BUYS = {
+  daily: 365 / 12,
+  weekly: 52 / 12,
+  monthly: 1,
+};
+
+const SATS_PER_BTC = 100_000_000;
+
+/* Unterhalb dieser UTXO-Größe wird das Zusammenlegen später teuer. */
+const MIN_UTXO_SATS = 3_000_000;
+
+/* Ab diesem Bestand lohnt sich der Aufwand für Multisig. */
+const MULTISIG_THRESHOLD = 100_000;
+
+const PALETTE = [
+  'var(--c-risiko)',
+  'var(--c-fix)',
+  'var(--c-lifestyle)',
+  'var(--c-urlaub)',
+  'var(--c-invest)',
+  'var(--c-steuer)',
+  'var(--c-spende)',
+];
+
+const WALLET_PALETTE = [
+  'var(--c-hot)',
+  'var(--c-cold)',
+  'var(--c-coldpp)',
+  'var(--c-multisig)',
+];
+
+const DEFAULT_DATA = {
+  income: 3000,
+  buckets: [
+    { id: 'pnm45j3', name: 'Risikorücklage', note: 'Notgroschen (Zugang erschwert)', mode: 'percent', value: 10, color: 'var(--c-risiko)' },
+    { id: '6rshdhj', name: 'Fixkosten', note: 'Miete, Versicherungen, Abos', mode: 'linked', value: 0, color: 'var(--c-fix)' },
+    { id: '03tbe8u', name: 'Lifestyle', note: 'Einkaufen, Spaß · N26', mode: 'percent', value: 20, color: 'var(--c-lifestyle)' },
+    { id: 'nmovvh1', name: 'Urlaub', note: 'Reisekasse', mode: 'percent', value: 5, color: 'var(--c-urlaub)' },
+    { id: 'qr0ws1l', name: 'Investment', note: 'ETF / Sparplan', mode: 'percent', value: 15, color: 'var(--c-invest)' },
+    { id: '1r2sdei', name: 'Steuerrücklage', note: 'für Nachzahlungen', mode: 'percent', value: 0, color: 'var(--c-steuer)' },
+    { id: 'k7xd2pv', name: 'Spendenkonto', note: 'Spenden / Geben', mode: 'percent', value: 0, color: 'var(--c-spende)' },
+  ],
+  fixedCosts: [
+    { id: 'slbhko3', name: 'Miete / Wohnen', amount: 900, freq: 'monthly' },
+    { id: 'ljl2b3p', name: 'Netflix / Streaming', amount: 13.99, freq: 'monthly' },
+    { id: '4cna1mu', name: 'Handyvertrag', amount: 25, freq: 'monthly' },
+    { id: 'gpitw4b', name: 'Haftpflichtversicherung', amount: 80, freq: 'yearly' },
+    { id: 'y8t8a8x', name: 'KFZ-Versicherung', amount: 600, freq: 'yearly' },
+    { id: 'ebgp242', name: 'Strom', amount: 210, freq: 'quarterly' },
+  ],
+  bitcoin: {
+    /* Sparrate: entweder aus einem Konto des Privatmodells oder manuell */
+    source: 'qr0ws1l',
+    rate: 100,
+    interval: 'monthly',
+    price: 100000,
+    targetSats: 5_000_000,
+    holdings: 10000,
+    wallets: [
+      { id: 'w1hotxx', name: 'Hot Wallet', note: 'Alltag, kleine Beträge – wie die Brieftasche', mode: 'fixed', value: 200, color: 'var(--c-hot)' },
+      { id: 'w2coldx', name: 'Cold Wallet', note: 'Hardware-Wallet, Ziel des Sparplans', mode: 'percent', value: 20, color: 'var(--c-cold)' },
+      { id: 'w3coldp', name: 'Cold + Passphrase', note: 'konsolidierte UTXOs, langfristig', mode: 'rest', value: 0, color: 'var(--c-coldpp)' },
+      { id: 'w4multi', name: 'Multisig', note: 'optional, erst bei großen Beständen', mode: 'percent', value: 0, color: 'var(--c-multisig)' },
+    ],
+  },
+};
+
+/* ---------- Hilfsfunktionen ---------- */
+
+const eur = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+const pct = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+const plain = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+const ints = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 });
+const btcFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 8, maximumFractionDigits: 8 });
+
+const fmtEUR = (n) => eur.format(n || 0);
+const fmtPct = (n) => `${pct.format(n || 0)} %`;
+const fmtSats = (n) => `${ints.format(Math.round(n || 0))} sats`;
+const fmtBTC = (n) => `${btcFmt.format(n || 0)} BTC`;
+
+/** Akzeptiert "1.234,56", "1234.56", "13,99 €" … */
+function parseNum(raw) {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : 0;
+  let s = String(raw ?? '').trim().replace(/[€\s]/g, '');
+  if (!s) return 0;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const newId = () => Math.random().toString(36).slice(2, 9);
+
+const $ = (sel, root = document) => root.querySelector(sel);
+
+/* ---------- Zustand ---------- */
+
+function normalize(raw) {
+  const data = raw && typeof raw === 'object' ? raw : {};
+  const buckets = Array.isArray(data.buckets) ? data.buckets : [];
+  const fixedCosts = Array.isArray(data.fixedCosts) ? data.fixedCosts : [];
+
+  return {
+    income: Math.max(0, parseNum(data.income)),
+    buckets: buckets.map((b, i) => ({
+      id: b?.id || newId(),
+      name: String(b?.name ?? ''),
+      note: String(b?.note ?? ''),
+      mode: MODES.includes(b?.mode) ? b.mode : 'percent',
+      value: Math.max(0, parseNum(b?.value)),
+      color: b?.color || PALETTE[i % PALETTE.length],
+    })),
+    fixedCosts: fixedCosts.map((f) => ({
+      id: f?.id || newId(),
+      name: String(f?.name ?? ''),
+      amount: Math.max(0, parseNum(f?.amount)),
+      freq: FREQ_FACTOR[f?.freq] ? f.freq : 'monthly',
+    })),
+    bitcoin: normalizeBitcoin(data.bitcoin),
+  };
+}
+
+/* Ältere Exporte kennen den Bitcoin-Teil noch nicht – dann greifen die Vorgaben. */
+function normalizeBitcoin(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const fallback = DEFAULT_DATA.bitcoin;
+  const wallets = Array.isArray(src.wallets) && src.wallets.length ? src.wallets : fallback.wallets;
+
+  return {
+    source: src.source === 'manual' || typeof src.source === 'string' ? src.source : fallback.source,
+    rate: Math.max(0, parseNum(src.rate ?? fallback.rate)),
+    interval: INTERVAL_BUYS[src.interval] ? src.interval : fallback.interval,
+    price: Math.max(0, parseNum(src.price ?? fallback.price)),
+    targetSats: Math.max(0, parseNum(src.targetSats ?? fallback.targetSats)),
+    holdings: Math.max(0, parseNum(src.holdings ?? fallback.holdings)),
+    wallets: wallets.map((w, i) => ({
+      id: w?.id || newId(),
+      name: String(w?.name ?? ''),
+      note: String(w?.note ?? ''),
+      mode: WALLET_MODES.includes(w?.mode) ? w.mode : 'percent',
+      value: Math.max(0, parseNum(w?.value)),
+      color: w?.color || WALLET_PALETTE[i % WALLET_PALETTE.length],
+    })),
+  };
+}
+
+function load() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return normalize(JSON.parse(stored));
+  } catch (err) {
+    console.warn('Gespeicherte Daten konnten nicht gelesen werden:', err);
+  }
+  return normalize(DEFAULT_DATA);
+}
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      console.warn('Speichern fehlgeschlagen:', err);
+    }
+  }, 200);
+}
+
+let state = load();
+
+const bucketById = (id) => state.buckets.find((b) => b.id === id);
+const fixedById = (id) => state.fixedCosts.find((f) => f.id === id);
+
+/* ---------- Berechnung ---------- */
+
+const monthlyOf = (item) => item.amount * (FREQ_FACTOR[item.freq] ?? 1);
+
+function compute() {
+  const income = state.income;
+  const fixedMonthly = state.fixedCosts.reduce((sum, f) => sum + monthlyOf(f), 0);
+
+  const amounts = new Map();
+  let assigned = 0;
+
+  for (const b of state.buckets) {
+    if (b.mode === 'rest') continue;
+    let amount = 0;
+    if (b.mode === 'percent') amount = (income * b.value) / 100;
+    else if (b.mode === 'fixed') amount = b.value;
+    else if (b.mode === 'linked') amount = fixedMonthly;
+    amounts.set(b.id, amount);
+    assigned += amount;
+  }
+
+  /* Rest-Konten teilen sich, was nach allen anderen Konten übrig bleibt. */
+  const restBuckets = state.buckets.filter((b) => b.mode === 'rest');
+  const leftover = income - assigned;
+  if (restBuckets.length) {
+    const share = Math.max(0, leftover) / restBuckets.length;
+    for (const b of restBuckets) {
+      amounts.set(b.id, share);
+      assigned += share;
+    }
+  }
+
+  return {
+    income,
+    fixedMonthly,
+    amounts,
+    allocated: assigned,
+    rest: income - assigned,
+    fixedRate: income > 0 ? (fixedMonthly / income) * 100 : 0,
+  };
+}
+
+/* ---------- Zeilen aufbauen ---------- */
+
+const bucketRows = $('#bucket-rows');
+const fixedRows = $('#fixed-rows');
+const tplBucket = $('#tpl-bucket');
+const tplFixed = $('#tpl-fixed');
+
+function applyMode(row, bucket) {
+  const input = $('[data-field="value"]', row);
+  const unit = $('[data-role="value-unit"]', row);
+  const derived = bucket.mode === 'linked' || bucket.mode === 'rest';
+
+  input.disabled = derived;
+  input.value = derived ? '' : plain.format(bucket.value);
+  unit.textContent = bucket.mode === 'percent' ? '%' : bucket.mode === 'fixed' ? '€' : '';
+  input.placeholder = bucket.mode === 'linked' ? 'auto' : bucket.mode === 'rest' ? 'Rest' : '';
+}
+
+function buildBucketRow(bucket) {
+  const row = tplBucket.content.firstElementChild.cloneNode(true);
+  row.dataset.id = bucket.id;
+  $('[data-role="swatch"]', row).style.setProperty('--swatch', bucket.color);
+  $('[data-field="name"]', row).value = bucket.name;
+  $('[data-field="note"]', row).value = bucket.note;
+  $('[data-field="mode"]', row).value = bucket.mode;
+  applyMode(row, bucket);
+  return row;
+}
+
+function buildFixedRow(item) {
+  const row = tplFixed.content.firstElementChild.cloneNode(true);
+  row.dataset.id = item.id;
+  $('[data-field="name"]', row).value = item.name;
+  $('[data-field="amount"]', row).value = plain.format(item.amount);
+  $('[data-field="freq"]', row).value = item.freq;
+  return row;
+}
+
+function renderRows() {
+  bucketRows.replaceChildren(...state.buckets.map(buildBucketRow));
+  fixedRows.replaceChildren(...state.fixedCosts.map(buildFixedRow));
+  refresh();
+  renderBitcoinRows();
+}
+
+/* ---------- Berechnete Werte aktualisieren ---------- */
+
+const bar = $('#bar');
+const warning = $('[data-role="warning"]');
+
+function refresh() {
+  const result = compute();
+
+  for (const row of bucketRows.children) {
+    const amount = result.amounts.get(row.dataset.id) ?? 0;
+    $('[data-role="monthly"]', row).textContent = fmtEUR(amount);
+    $('[data-role="share"]', row).textContent =
+      result.income > 0 ? fmtPct((amount / result.income) * 100) : '–';
+    $('[data-role="yearly"]', row).textContent = fmtEUR(amount * 12);
+  }
+
+  for (const row of fixedRows.children) {
+    const item = fixedById(row.dataset.id);
+    $('[data-role="monthly"]', row).textContent = item ? fmtEUR(monthlyOf(item)) : '–';
+  }
+
+  $('[data-role="total-allocated"]').textContent = fmtEUR(result.allocated);
+  $('[data-role="total-fixed"]').textContent = fmtEUR(result.fixedMonthly);
+  $('[data-role="fixed-rate"]').textContent = fmtPct(result.fixedRate);
+  $('[data-role="bucket-count"]').textContent = String(state.buckets.length);
+
+  const over = result.rest < -0.005;
+  const restLabel = $('[data-role="rest-label"]');
+  const restValue = $('[data-role="total-rest"]');
+  restLabel.textContent = over ? 'Überzogen' : 'Rest auf Hausbank';
+  restValue.textContent = fmtEUR(Math.abs(result.rest));
+  restValue.classList.toggle('negative', over);
+  restValue.classList.toggle('positive', !over && result.rest > 0.005);
+
+  warning.hidden = !over;
+  warning.className = 'hint warn';
+  if (over) {
+    warning.textContent = `Die Konten fordern ${fmtEUR(Math.abs(result.rest))} mehr, als das Einkommen hergibt.`;
+  }
+
+  renderBar(result, over);
+}
+
+/** Zeichnet einen gestapelten Balken aus { amount, color, label, faded }. */
+function paintBar(el, parts, scale, over) {
+  const segments = [];
+
+  if (scale > 0) {
+    for (const part of parts) {
+      if (part.amount <= 0.005) continue;
+      const seg = document.createElement('span');
+      seg.style.width = `${(part.amount / scale) * 100}%`;
+      seg.style.background = part.color;
+      if (part.faded) seg.style.opacity = '.35';
+      seg.title = `${part.label}: ${fmtEUR(part.amount)}`;
+      segments.push(seg);
+    }
+  }
+
+  el.replaceChildren(...segments);
+  el.classList.toggle('over', Boolean(over));
+}
+
+function renderBar(result, over) {
+  const parts = state.buckets.map((b) => ({
+    amount: result.amounts.get(b.id) ?? 0,
+    color: b.color,
+    label: b.name || 'Konto',
+  }));
+
+  parts.push({
+    amount: result.rest,
+    color: 'var(--c-rest)',
+    label: 'Rest auf Hausbank',
+    faded: true,
+  });
+
+  paintBar(bar, parts, Math.max(result.income, result.allocated), over);
+  if (walletRows.children.length) refreshBitcoin();
+}
+
+/* ============================ Bitcoin-Modell ============================ */
+
+const walletRows = $('#wallet-rows');
+const tplWallet = $('#tpl-wallet');
+const btcBar = $('#btc-bar');
+
+const btc = () => state.bitcoin;
+const walletById = (id) => btc().wallets.find((w) => w.id === id);
+
+/** Monatliche Sparrate: entweder aus einem Konto des Privatmodells oder manuell. */
+function savingsRate() {
+  const linked = bucketById(btc().source);
+  if (!linked) return btc().rate;
+  return compute().amounts.get(linked.id) ?? 0;
+}
+
+function computeBitcoin() {
+  const cfg = btc();
+  const rate = savingsRate();
+  const buysPerMonth = INTERVAL_BUYS[cfg.interval] ?? 1;
+  const perBuy = rate / buysPerMonth;
+  const satsPerBuy = cfg.price > 0 ? (perBuy / cfg.price) * SATS_PER_BTC : 0;
+
+  const buysToTarget = satsPerBuy > 0 ? Math.ceil(cfg.targetSats / satsPerBuy) : Infinity;
+  const monthsToTarget = Number.isFinite(buysToTarget) ? buysToTarget / buysPerMonth : Infinity;
+
+  /* Aufteilung des Bestands auf die Wallets – wie im Privatmodell, ohne "Fixkosten". */
+  const amounts = new Map();
+  let assigned = 0;
+
+  for (const w of cfg.wallets) {
+    if (w.mode === 'rest') continue;
+    const amount = w.mode === 'percent' ? (cfg.holdings * w.value) / 100 : w.value;
+    amounts.set(w.id, amount);
+    assigned += amount;
+  }
+
+  const restWallets = cfg.wallets.filter((w) => w.mode === 'rest');
+  if (restWallets.length) {
+    const share = Math.max(0, cfg.holdings - assigned) / restWallets.length;
+    for (const w of restWallets) {
+      amounts.set(w.id, share);
+      assigned += share;
+    }
+  }
+
+  return {
+    rate,
+    perBuy,
+    satsPerBuy,
+    buysPerMonth,
+    buysToTarget,
+    monthsToTarget,
+    targetEur: (cfg.targetSats / SATS_PER_BTC) * cfg.price,
+    holdingsBtc: cfg.price > 0 ? cfg.holdings / cfg.price : 0,
+    amounts,
+    assigned,
+    rest: cfg.holdings - assigned,
+  };
+}
+
+function applyWalletMode(row, wallet) {
+  const input = $('[data-field="value"]', row);
+  const unit = $('[data-role="value-unit"]', row);
+  const derived = wallet.mode === 'rest';
+
+  input.disabled = derived;
+  input.value = derived ? '' : plain.format(wallet.value);
+  input.placeholder = derived ? 'Rest' : '';
+  unit.textContent = wallet.mode === 'percent' ? '%' : wallet.mode === 'fixed' ? '€' : '';
+}
+
+function buildWalletRow(wallet) {
+  const row = tplWallet.content.firstElementChild.cloneNode(true);
+  row.dataset.id = wallet.id;
+  $('[data-role="swatch"]', row).style.setProperty('--swatch', wallet.color);
+  $('[data-field="name"]', row).value = wallet.name;
+  $('[data-field="note"]', row).value = wallet.note;
+  $('[data-field="mode"]', row).value = wallet.mode;
+  applyWalletMode(row, wallet);
+  return row;
+}
+
+/** Auswahlliste für die Herkunft der Sparrate neu aufbauen. */
+function renderSourceOptions() {
+  const select = $('#btc-source');
+  const options = state.buckets.map((b) => {
+    const option = document.createElement('option');
+    option.value = b.id;
+    option.textContent = `aus „${b.name || 'Konto'}“`;
+    return option;
+  });
+
+  const manual = document.createElement('option');
+  manual.value = 'manual';
+  manual.textContent = 'manuell';
+  options.push(manual);
+
+  select.replaceChildren(...options);
+  select.value = bucketById(btc().source) ? btc().source : 'manual';
+  if (select.value === 'manual') btc().source = 'manual';
+}
+
+function renderBitcoinRows() {
+  walletRows.replaceChildren(...btc().wallets.map(buildWalletRow));
+  renderSourceOptions();
+
+  const cfg = btc();
+  $('#btc-interval').value = cfg.interval;
+  $('#btc-price').value = plain.format(cfg.price);
+  $('#btc-target').value = ints.format(cfg.targetSats);
+  $('#btc-holdings').value = plain.format(cfg.holdings);
+  refreshBitcoin();
+}
+
+function refreshBitcoin() {
+  const cfg = btc();
+  const result = computeBitcoin();
+  const linked = Boolean(bucketById(cfg.source));
+
+  const rateInput = $('#btc-rate');
+  rateInput.disabled = linked;
+  if (linked || document.activeElement !== rateInput) {
+    rateInput.value = plain.format(linked ? result.rate : cfg.rate);
+  }
+
+  $('[data-role="btc-per-buy"]').textContent = fmtEUR(result.perBuy);
+  $('[data-role="btc-sats-buy"]').textContent = fmtSats(result.satsPerBuy);
+  $('[data-role="btc-target-eur"]').textContent = fmtEUR(result.targetEur);
+  $('[data-role="btc-buys"]').textContent =
+    Number.isFinite(result.buysToTarget) ? ints.format(result.buysToTarget) : '–';
+  $('[data-role="btc-months"]').textContent =
+    Number.isFinite(result.monthsToTarget) ? `${pct.format(result.monthsToTarget)} Monate` : '–';
+  $('[data-role="btc-holdings-btc"]').textContent = fmtBTC(result.holdingsBtc);
+
+  $('[data-role="btc-utxo-hint"]').textContent = utxoHint(result);
+
+  for (const row of walletRows.children) {
+    const amount = result.amounts.get(row.dataset.id) ?? 0;
+    $('[data-role="amount"]', row).textContent = fmtEUR(amount);
+    $('[data-role="share"]', row).textContent =
+      cfg.holdings > 0 ? fmtPct((amount / cfg.holdings) * 100) : '–';
+  }
+
+  const over = result.rest < -0.005;
+  const walletWarning = $('[data-role="btc-wallet-warning"]');
+  walletWarning.hidden = !over;
+  walletWarning.className = 'hint warn';
+  if (over) {
+    walletWarning.textContent =
+      `Die Wallets fassen ${fmtEUR(Math.abs(result.rest))} mehr, als der Bestand hergibt.`;
+  }
+
+  $('[data-role="btc-multisig-hint"]').textContent =
+    cfg.holdings >= MULTISIG_THRESHOLD
+      ? `Ab etwa ${fmtEUR(MULTISIG_THRESHOLD)} lohnt es sich, Multisig zu prüfen – mit dem Aufwand, den die Einrichtung und die Nachlassplanung mit sich bringen.`
+      : `Unter etwa ${fmtEUR(MULTISIG_THRESHOLD)} ist Multisig meist mehr Aufwand als Nutzen; Cold Wallet mit Passphrase reicht.`;
+
+  const parts = cfg.wallets.map((w) => ({
+    amount: result.amounts.get(w.id) ?? 0,
+    color: w.color,
+    label: w.name || 'Wallet',
+  }));
+  parts.push({ amount: result.rest, color: 'var(--c-rest)', label: 'nicht zugeteilt', faded: true });
+
+  paintBar(btcBar, parts, Math.max(cfg.holdings, result.assigned), over);
+}
+
+function utxoHint(result) {
+  if (!(result.satsPerBuy > 0)) {
+    return 'Trage Sparrate und Bitcoin-Kurs ein, um die UTXO-Größe abzuschätzen.';
+  }
+  if (result.satsPerBuy >= btc().targetSats) {
+    return 'Jeder einzelne Kauf erreicht bereits die Zielgröße – die UTXOs müssen später nicht zusammengelegt werden.';
+  }
+
+  const months = pct.format(result.monthsToTarget);
+  const small = result.satsPerBuy < MIN_UTXO_SATS;
+  const base =
+    `Ein Kauf liefert ${fmtSats(result.satsPerBuy)}. Nach ${ints.format(result.buysToTarget)} Käufen ` +
+    `(rund ${months} Monate) ist die Zielgröße erreicht – dann konsolidiert in die Passphrase-Wallet schicken.`;
+
+  return small
+    ? `${base} Einzeln bleiben die Beträge unter ${fmtSats(MIN_UTXO_SATS)}, was das spätere Ausgeben teuer macht.`
+    : base;
+}
+
+/* ---------- Ereignisse ---------- */
+
+const incomeInput = $('#income');
+incomeInput.value = plain.format(state.income);
+
+incomeInput.addEventListener('input', () => {
+  state.income = Math.max(0, parseNum(incomeInput.value));
+  save();
+  refresh();
+});
+incomeInput.addEventListener('blur', () => {
+  incomeInput.value = plain.format(state.income);
+});
+
+bucketRows.addEventListener('input', (event) => {
+  const field = event.target.dataset.field;
+  const row = event.target.closest('.bucket');
+  if (!field || !row) return;
+  const bucket = bucketById(row.dataset.id);
+  if (!bucket) return;
+
+  if (field === 'value') bucket.value = Math.max(0, parseNum(event.target.value));
+  else bucket[field] = event.target.value;
+
+  save();
+  if (field === 'value') refresh();
+  if (field === 'name') renderSourceOptions();
+});
+
+bucketRows.addEventListener('change', (event) => {
+  if (event.target.dataset.field !== 'mode') return;
+  const row = event.target.closest('.bucket');
+  const bucket = bucketById(row?.dataset.id);
+  if (!bucket) return;
+
+  bucket.mode = MODES.includes(event.target.value) ? event.target.value : 'percent';
+  applyMode(row, bucket);
+  save();
+  refresh();
+});
+
+fixedRows.addEventListener('input', (event) => {
+  const field = event.target.dataset.field;
+  const row = event.target.closest('.fixed-row');
+  if (!field || !row) return;
+  const item = fixedById(row.dataset.id);
+  if (!item) return;
+
+  if (field === 'amount') item.amount = Math.max(0, parseNum(event.target.value));
+  else item[field] = event.target.value;
+
+  save();
+  if (field === 'amount') refresh();
+});
+
+fixedRows.addEventListener('change', (event) => {
+  if (event.target.dataset.field !== 'freq') return;
+  const item = fixedById(event.target.closest('.fixed-row')?.dataset.id);
+  if (!item) return;
+  item.freq = FREQ_FACTOR[event.target.value] ? event.target.value : 'monthly';
+  save();
+  refresh();
+});
+
+/* ---------- Ereignisse im Bitcoin-Tab ---------- */
+
+/* Zahlenfeld → Feld im Bitcoin-Zustand */
+const BTC_INPUTS = {
+  'btc-rate': 'rate',
+  'btc-price': 'price',
+  'btc-target': 'targetSats',
+  'btc-holdings': 'holdings',
+};
+
+for (const [id, key] of Object.entries(BTC_INPUTS)) {
+  const input = $(`#${id}`);
+  input.addEventListener('input', () => {
+    btc()[key] = Math.max(0, parseNum(input.value));
+    save();
+    refreshBitcoin();
+  });
+  input.addEventListener('blur', () => {
+    const value = btc()[key];
+    input.value = key === 'targetSats' ? ints.format(value) : plain.format(value);
+  });
+}
+
+$('#btc-source').addEventListener('change', (event) => {
+  btc().source = event.target.value;
+  save();
+  refreshBitcoin();
+});
+
+$('#btc-interval').addEventListener('change', (event) => {
+  btc().interval = INTERVAL_BUYS[event.target.value] ? event.target.value : 'monthly';
+  save();
+  refreshBitcoin();
+});
+
+walletRows.addEventListener('input', (event) => {
+  const field = event.target.dataset.field;
+  const wallet = walletById(event.target.closest('.wallet')?.dataset.id);
+  if (!field || !wallet) return;
+
+  if (field === 'value') wallet.value = Math.max(0, parseNum(event.target.value));
+  else wallet[field] = event.target.value;
+
+  save();
+  if (field === 'value') refreshBitcoin();
+});
+
+walletRows.addEventListener('change', (event) => {
+  if (event.target.dataset.field !== 'mode') return;
+  const row = event.target.closest('.wallet');
+  const wallet = walletById(row?.dataset.id);
+  if (!wallet) return;
+
+  wallet.mode = WALLET_MODES.includes(event.target.value) ? event.target.value : 'percent';
+  applyWalletMode(row, wallet);
+  save();
+  refreshBitcoin();
+});
+
+/* ---------- Tabs ---------- */
+
+const TAB_KEY = 'kontenmodell.tab';
+const TABS = ['privat', 'bitcoin', 'hilfe'];
+
+function showTab(name) {
+  const target = TABS.includes(name) ? name : 'privat';
+
+  for (const tab of document.querySelectorAll('.tab')) {
+    tab.setAttribute('aria-selected', String(tab.dataset.tab === target));
+  }
+  for (const panel of document.querySelectorAll('.panel')) {
+    panel.hidden = panel.dataset.panel !== target;
+  }
+
+  try {
+    localStorage.setItem(TAB_KEY, target);
+  } catch { /* ohne Speicher läuft die Seite trotzdem */ }
+}
+
+document.querySelector('.tabs').addEventListener('click', (event) => {
+  const tab = event.target.closest('.tab');
+  if (tab) showTab(tab.dataset.tab);
+});
+
+document.addEventListener('click', (event) => {
+  const action = event.target.closest('[data-action]')?.dataset.action;
+  if (!action) return;
+
+  if (action === 'add-bucket') {
+    state.buckets.push({
+      id: newId(),
+      name: '',
+      note: '',
+      mode: 'percent',
+      value: 0,
+      color: PALETTE[state.buckets.length % PALETTE.length],
+    });
+    save();
+    renderRows();
+    const last = bucketRows.lastElementChild;
+    if (last) $('[data-field="name"]', last).focus();
+  }
+
+  if (action === 'remove-bucket') {
+    const id = event.target.closest('.bucket')?.dataset.id;
+    state.buckets = state.buckets.filter((b) => b.id !== id);
+    save();
+    renderRows();
+  }
+
+  if (action === 'add-wallet') {
+    btc().wallets.push({
+      id: newId(),
+      name: '',
+      note: '',
+      mode: 'percent',
+      value: 0,
+      color: WALLET_PALETTE[btc().wallets.length % WALLET_PALETTE.length],
+    });
+    save();
+    renderBitcoinRows();
+    const last = walletRows.lastElementChild;
+    if (last) $('[data-field="name"]', last).focus();
+  }
+
+  if (action === 'remove-wallet') {
+    const id = event.target.closest('.wallet')?.dataset.id;
+    btc().wallets = btc().wallets.filter((w) => w.id !== id);
+    save();
+    renderBitcoinRows();
+  }
+
+  if (action === 'add-fixed') {
+    state.fixedCosts.push({ id: newId(), name: '', amount: 0, freq: 'monthly' });
+    save();
+    renderRows();
+    const last = fixedRows.lastElementChild;
+    if (last) $('[data-field="name"]', last).focus();
+  }
+
+  if (action === 'remove-fixed') {
+    const id = event.target.closest('.fixed-row')?.dataset.id;
+    state.fixedCosts = state.fixedCosts.filter((f) => f.id !== id);
+    save();
+    renderRows();
+  }
+
+  if (action === 'export') exportJson();
+  if (action === 'import') $('#import-file').click();
+
+  if (action === 'reset') {
+    if (!confirm('Konten, Fixkosten und Bitcoin-Modell auf die Standardwerte zurücksetzen?')) return;
+    state = normalize(DEFAULT_DATA);
+    incomeInput.value = plain.format(state.income);
+    save();
+    renderRows();
+  }
+});
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'kontenmodell.json';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+$('#import-file').addEventListener('change', async (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+
+  try {
+    const parsed = JSON.parse(await file.text());
+    state = normalize(parsed);
+    incomeInput.value = plain.format(state.income);
+    save();
+    renderRows();
+  } catch (err) {
+    alert('Die Datei konnte nicht gelesen werden – erwartet wird ein JSON-Export dieses Tools.');
+    console.warn(err);
+  }
+});
+
+/* ---------- Start ---------- */
+
+renderRows();
+
+let startTab = 'privat';
+try {
+  startTab = localStorage.getItem(TAB_KEY) || 'privat';
+} catch { /* ohne Speicher startet immer das Privatmodell */ }
+showTab(startTab);
+
+  </script>
+</body>
+</html>

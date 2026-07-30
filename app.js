@@ -671,15 +671,17 @@ walletRows.addEventListener('change', (event) => {
 /* ---------- Tabs ---------- */
 
 const TAB_KEY = 'kontenmodell.tab';
+const TABS = ['privat', 'bitcoin', 'hilfe'];
 
 function showTab(name) {
-  const target = name === 'bitcoin' ? 'bitcoin' : 'privat';
+  const target = TABS.includes(name) ? name : 'privat';
 
   for (const tab of document.querySelectorAll('.tab')) {
     tab.setAttribute('aria-selected', String(tab.dataset.tab === target));
   }
-  $('#panel-privat').hidden = target !== 'privat';
-  $('#panel-bitcoin').hidden = target !== 'bitcoin';
+  for (const panel of document.querySelectorAll('.panel')) {
+    panel.hidden = panel.dataset.panel !== target;
+  }
 
   try {
     localStorage.setItem(TAB_KEY, target);

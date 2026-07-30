@@ -61,6 +61,14 @@ Gebühr nach der Transaktionsgröße richtet und nicht nach dem Betrag.
 Der Kurs wird nicht abgerufen, sondern von Hand eingetragen – die Seite macht
 keine Netzwerkanfragen.
 
+## Hilfe-Tab
+
+Der Tab „?" fasst das Modell nach dem Pareto-Prinzip zusammen: die sechs Punkte
+mit dem größten Effekt, die drei Geldregeln (Lifestyle-Inflation, Planbarkeit
+vermeintlicher Notfälle, Ordnung), eine Einrichtungs-Anleitung in vier Schritten,
+die Bankwahl je Konto, der Bitcoin-Teil in drei Sätzen und der Abschnitt zu
+Disziplin. Reiner Text, keine Eingaben.
+
 ## Daten
 
 Der Zustand liegt in `localStorage` (Schlüssel `kontenmodell.v1`); es werden

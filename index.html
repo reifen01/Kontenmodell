@@ -16,6 +16,8 @@
                 aria-controls="panel-privat" aria-selected="true">Privat</button>
         <button type="button" class="tab" role="tab" id="tab-bitcoin" data-tab="bitcoin"
                 aria-controls="panel-bitcoin" aria-selected="false">Bitcoin</button>
+        <button type="button" class="tab" role="tab" id="tab-hilfe" data-tab="hilfe"
+                aria-controls="panel-hilfe" aria-selected="false" title="Hilfe" aria-label="Hilfe">?</button>
       </nav>
 
       <div class="income">
@@ -30,7 +32,7 @@
 
   <main>
     <!-- ============================ Privates Kontomodell ============================ -->
-    <div id="panel-privat" role="tabpanel" aria-labelledby="tab-privat" class="panel">
+    <div id="panel-privat" role="tabpanel" aria-labelledby="tab-privat" class="panel" data-panel="privat">
       <section class="card summary" aria-labelledby="summary-title">
         <h2 id="summary-title">Übersicht</h2>
 
@@ -107,7 +109,7 @@
     </div>
 
     <!-- ============================ Bitcoin-Kontomodell ============================ -->
-    <div id="panel-bitcoin" role="tabpanel" aria-labelledby="tab-bitcoin" class="panel" hidden>
+    <div id="panel-bitcoin" role="tabpanel" aria-labelledby="tab-bitcoin" class="panel" data-panel="bitcoin" hidden>
       <section class="card" aria-labelledby="flow-title">
         <h2 id="flow-title">Ablauf</h2>
         <ol class="flow">
@@ -223,6 +225,130 @@
 
         <p class="hint" data-role="btc-wallet-warning" hidden></p>
         <p class="hint" data-role="btc-multisig-hint"></p>
+      </section>
+    </div>
+
+    <!-- ============================ Hilfe ============================ -->
+    <div id="panel-hilfe" role="tabpanel" aria-labelledby="tab-hilfe" class="panel help" data-panel="hilfe" hidden>
+      <section class="card" aria-labelledby="pareto-title">
+        <h2 id="pareto-title">Das Wesentliche</h2>
+        <p class="lead">Sechs Punkte. Wer nur die umsetzt, hat den größten Teil des Nutzens.</p>
+
+        <ol class="numbered">
+          <li>
+            <strong>Ein Konto für den Geldeingang, mehrere für den Zweck.</strong>
+            Alle Einkünfte laufen auf einem Konto zusammen und werden von dort verteilt.
+            Was liegen bleibt, ist Puffer für Kontogebühren – kein Versehen.
+          </li>
+          <li>
+            <strong>Fixkosten einmal vollständig aufschreiben.</strong>
+            Jahres- und Quartalsbeiträge auf den Monat herunterrechnen und monatlich zurücklegen.
+            Wer seine Fixkostenquote kennt, kennt seinen Spielraum.
+          </li>
+          <li>
+            <strong>Risikorücklage zuerst.</strong>
+            Defekte Waschmaschine, Blitzerfoto, Nebenkostennachzahlung – das sind keine
+            Überraschungen, sondern Statistik. Ein Topf dafür nimmt ihnen den Schrecken.
+          </li>
+          <li>
+            <strong>Das Lifestyle-Konto darf leer werden.</strong>
+            Genau dafür ist es da. Solange die anderen Konten bedient sind, braucht es
+            beim Einkaufen kein Kopfrechnen und kein schlechtes Gewissen.
+          </li>
+          <li>
+            <strong>Gehaltserhöhungen vorher verteilen.</strong>
+            Sonst versickern sie unbemerkt im Alltag. Erst entscheiden, wohin die
+            zusätzlichen Euro gehen, dann ausgeben.
+          </li>
+          <li>
+            <strong>Getrennte Banken statt Unterkonten in einer App.</strong>
+            An die Risikorücklage soll man nicht in zwei Sekunden herankommen –
+            die kleine Hürde ist der eigentliche Schutz.
+          </li>
+        </ol>
+      </section>
+
+      <section class="card" aria-labelledby="rules-title">
+        <h2 id="rules-title">Drei Regeln</h2>
+        <div class="rules">
+          <div class="rule">
+            <h3>Lifestyle-Inflation</h3>
+            <p>
+              Mehr Gehalt führt oft zu höheren Fixkosten statt zu mehr Freiheit.
+              Nach ein paar Monaten fühlt sich das größere Einkommen normal an –
+              geblieben ist nur die höhere Grundlast.
+            </p>
+          </div>
+          <div class="rule">
+            <h3>Kaum etwas ist unvorhersehbar</h3>
+            <p>
+              Die meisten „unerwarteten" Ausgaben sind nur ungeplant. Geräte gehen
+              kaputt, Versicherungen werden fällig, Autos brauchen Reparaturen.
+              Planbar ist das alles.
+            </p>
+          </div>
+          <div class="rule">
+            <h3>Geld liebt Ordnung</h3>
+            <p>
+              Vermögende leisten sich Strukturen, die ihr Geld ordnen. Im Kleinen
+              ist die Kontostruktur genau das – nur ohne Family Office.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="setup-title">
+        <h2 id="setup-title">In vier Schritten einrichten</h2>
+        <ol class="numbered">
+          <li><strong>Fixkosten sammeln.</strong> Im Tab <em>Privat</em> unten eintragen, Turnus wählen – die Monatswerte rechnet die Seite aus.</li>
+          <li><strong>Konten festlegen.</strong> Beträge oder Prozente so lange verschieben, bis die Aufteilung zum eigenen Leben passt.</li>
+          <li><strong>Konten eröffnen.</strong> Daueraufträge auf den Tag nach dem Gehaltseingang legen, damit die Verteilung von allein läuft.</li>
+          <li><strong>Nach zwei bis drei Monaten nachjustieren.</strong> Meist ist das Lifestyle-Konto zu knapp oder die Risikorücklage zu niedrig.</li>
+        </ol>
+      </section>
+
+      <section class="card" aria-labelledby="banks-title">
+        <h2 id="banks-title">Welches Konto bei welcher Bank</h2>
+        <dl class="pairs">
+          <div><dt>Geldeingang</dt><dd>Hausbank mit festem Ansprechpartner – hier entsteht über Jahre eine saubere Historie, die bei Krediten hilft.</dd></div>
+          <div><dt>Risikorücklage</dt><dd>Andere Bank, am besten ohne Karte. Zugriff nur bewusst über das Online-Banking.</dd></div>
+          <div><dt>Urlaub</dt><dd>Konto, das im Ausland zuverlässig funktioniert und mehrere Währungen kann.</dd></div>
+          <div><dt>Lifestyle</dt><dd>Schnelle App-Bank für den Alltag – hier läuft die Karte, mit der bezahlt wird.</dd></div>
+          <div><dt>Investment</dt><dd>Passend zum Anlageziel: Depot für Wertpapiere, Sparplan-Anbieter für Bitcoin.</dd></div>
+        </dl>
+        <p class="hint">
+          Mehrere Konten verderben den Schufa-Score nicht, solange keines ins Minus rutscht –
+          aber alle auf einmal zu eröffnen, muss nicht sein.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="btc-help-title">
+        <h2 id="btc-help-title">Bitcoin in drei Sätzen</h2>
+        <ul class="ticks">
+          <li>Der Sparplan läuft auf die Hardware-Wallet; auf dem Hot Wallet liegt nur so viel wie in einer Brieftasche.</li>
+          <li>Viele kleine Käufe erzeugen viele kleine UTXOs – erst ab der Zielgröße konsolidiert auf die Passphrase-Wallet schicken, sonst wird das Ausgeben später teuer.</li>
+          <li>Multisig ist ein Werkzeug für große Bestände, nicht für die ersten Ersparnisse.</li>
+        </ul>
+      </section>
+
+      <section class="card" aria-labelledby="discipline-title">
+        <h2 id="discipline-title">Disziplin</h2>
+        <p class="quote">Disziplin ist der Preis für Freiheit.</p>
+        <p>
+          Disziplin heißt hier nichts anderes als: sich für das entscheiden, was man
+          langfristig will, gegen das, was kurzfristig ablenkt. Wer diese Entscheidung
+          jeden Tag neu treffen muss, verliert sie irgendwann – deshalb wird sie einmal
+          getroffen und in eine Struktur gegossen.
+        </p>
+        <p>
+          Genau das leisten die Konten: Sie nehmen dir die tägliche Einzelentscheidung ab.
+          Du schränkst dich damit nicht ein, sondern verhandelst einmal mit dir selbst,
+          wofür dein Geld da sein soll – und hältst dich anschließend nicht mehr selbst auf.
+        </p>
+        <p class="hint">
+          Inhaltlich zusammengefasst aus der Folge zum Kontenmodell von „Der Bitcoin Podcast"
+          (Florian Bruce). Keine Finanz- oder Steuerberatung.
+        </p>
       </section>
     </div>
 

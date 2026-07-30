@@ -136,6 +136,19 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
   .badge { animation: none; }
 }
 
+/* Kennung der ausgelieferten Fassung – klein, aber auf Screenshots lesbar. */
+.build-id {
+  padding: 2px 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: .3px;
+  user-select: all;
+}
+
 /* Kurzer Zustand direkt am Knopf – dort, wo man nach dem Tippen hinschaut. */
 .brand-status {
   padding: 3px 9px;

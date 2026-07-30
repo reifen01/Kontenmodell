@@ -1406,6 +1406,43 @@ async function checkForUpdate() {
   }
 }
 
+/* ============================ Kennung der Fassung ============================
+ *
+ * Die App wird ohne Build-Schritt ausgeliefert, es gibt also keine eingebaute
+ * Versionsnummer. Stattdessen fragen wir den Server nach dem ETag von app.js –
+ * der ändert sich bei jedem Deploy und taugt damit als Kennung, etwa um auf
+ * einem Screenshot zu erkennen, welche Fassung läuft.
+ */
+
+async function showBuildId() {
+  const el = $('[data-role="build-id"]');
+
+  /* Ohne Server gibt es nichts zu fragen – und der Versuch landete sonst als
+     Fehler in der Konsole. */
+  if (location.protocol === 'file:') return;
+
+  try {
+    const res = await fetch('app.js', { method: 'HEAD', cache: 'no-store' });
+    if (!res.ok) return;
+
+    const etag = (res.headers.get('etag') || '').replace(/[^A-Za-z0-9]/g, '');
+    const stand = res.headers.get('last-modified');
+    const kennung = etag ? etag.slice(-7) : stand ? new Date(stand).toISOString().slice(0, 10) : '';
+    if (!kennung) return;
+
+    el.textContent = `#${kennung}`;
+    el.title = [
+      `Fassung: ${etag || stand}`,
+      res.headers.get('x-vercel-id') && `Vercel: ${res.headers.get('x-vercel-id')}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    el.hidden = false;
+  } catch {
+    /* Offline oder ohne Server – dann bleibt die Kennung eben aus. */
+  }
+}
+
 /* ---------- Start ---------- */
 
 renderRows();
@@ -1418,3 +1455,5 @@ showTab(startTab);
 
 setupInstallPrompt();
 registerServiceWorker();
+showBuildId();
+

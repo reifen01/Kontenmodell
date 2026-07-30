@@ -108,6 +108,12 @@ dabei wichtig:
 
 `.vercelignore` hält Build-Skript und README aus dem Deployment heraus.
 
+Neben dem Namen steht eine kurze Kennung wie `#a1b2c3d`. Sie stammt aus dem
+ETag, mit dem der Server `app.js` ausliefert, ändert sich also bei jedem
+Deployment – praktisch, um auf einem Screenshot zu erkennen, welche Fassung
+läuft. Der Titel des Feldes zeigt den vollen Wert samt `x-vercel-id`. Ohne
+Server (Einzeldatei, `file://`) bleibt die Kennung aus.
+
 Alle Pfade in der App sind relativ – sie läuft daher genauso unter einem
 Unterpfad wie unter einer eigenen Domain.
 

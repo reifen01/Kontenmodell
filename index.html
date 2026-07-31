@@ -36,7 +36,9 @@
         <button type="button" class="tab" role="tab" id="tab-bitcoin" data-tab="bitcoin"
                 aria-controls="panel-bitcoin" aria-selected="false">Bitcoin</button>
         <button type="button" class="tab" role="tab" id="tab-hilfe" data-tab="hilfe"
-                aria-controls="panel-hilfe" aria-selected="false" title="Hilfe" aria-label="Hilfe">?</button>
+                aria-controls="panel-hilfe" aria-selected="false" title="Anleitung und Erklärungen">
+          <span class="tab-mark" aria-hidden="true">?</span>Hilfe
+        </button>
       </nav>
 
       <div class="income">
@@ -86,6 +88,15 @@
             <span>Prozent oder fester Betrag. Was übrig bleibt, liegt als Puffer auf der Hausbank.</span>
           </li>
         </ol>
+
+        <p class="intro-more">
+          Ausführliche Anleitung im Tab
+          <button type="button" class="linklike" data-action="goto-help">
+            <span class="tab-mark" aria-hidden="true">?</span>Hilfe
+          </button>
+          – die sechs wichtigsten Punkte, drei Geldregeln, welche Bank zu welchem Konto passt
+          und der Teil zu Disziplin.
+        </p>
       </section>
 
       <!-- ---------------------------- Übersicht ---------------------------- -->
@@ -472,7 +483,10 @@
     <section class="card" aria-labelledby="data-title">
       <div class="card-head">
         <h2 id="data-title">Daten</h2>
-        <button type="button" class="btn" data-action="print">🖨 Bericht drucken</button>
+        <div class="head-actions">
+          <button type="button" class="btn report" data-action="print">🖨 Bericht drucken</button>
+          <button type="button" class="btn sheet" data-action="csv">📊 CSV für Excel</button>
+        </div>
       </div>
       <div class="actions">
         <button type="button" class="btn primary" data-action="backup-create">🔒 Backup mit PIN</button>
@@ -488,6 +502,7 @@
       <p class="hint">
         Alle Daten bleiben lokal im Browser (localStorage) – nichts wird hochgeladen.
         Das Backup verschlüsselt deine Daten mit PIN oder Passwort (AES-256), der JSON-Export ist unverschlüsselt.
+        <strong>CSV</strong> ist zum Weiterrechnen in Excel gedacht und kann nicht zurückgelesen werden.
         <strong>Standardwerte</strong> stellt das Beispielmodell wieder her, <strong>Alles löschen</strong>
         leert Konten, Fixkosten und Wallets vollständig.
       </p>
@@ -670,10 +685,6 @@
           <span class="name-stack">
             <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
             <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
-            <button type="button" class="sub-toggle" data-action="toggle-fixed" aria-expanded="false" hidden>
-              <span class="chev" aria-hidden="true">▸</span>
-              <span data-role="sub-label">Fixkosten</span>
-            </button>
           </span>
         </span>
         <span>
@@ -695,6 +706,14 @@
           <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
         </span>
       </div>
+
+      <!-- Balken über die ganze Breite: der Einstieg in die Fixkostenliste -->
+      <button type="button" class="sub-toggle" data-action="toggle-fixed" aria-expanded="false" hidden>
+        <span class="chev" aria-hidden="true">▸</span>
+        <span class="sub-title">Fixkosten-Positionen</span>
+        <span class="sub-meta" data-role="sub-label">–</span>
+        <span class="sub-state" data-role="sub-state">anzeigen</span>
+      </button>
 
       <!-- nimmt bei „Fixkosten" den ausklappbaren Fixkosten-Block auf -->
       <div class="bucket-sub" data-role="sub" hidden></div>

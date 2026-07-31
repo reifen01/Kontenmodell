@@ -175,6 +175,9 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
 }
 
 .tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 16px;
   background: transparent;
   color: var(--text-dim);
@@ -182,6 +185,21 @@ h2 { font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-
   border-radius: 7px;
   font: inherit;
   cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Fragezeichen als eigenes Zeichen, damit der Hilfe-Tab auffällt. */
+.tab-mark {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  background: var(--accent);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
 }
 .tab:hover { color: var(--text); }
 .tab[aria-selected="true"] {
@@ -338,6 +356,26 @@ a { color: var(--accent); }
 
 .intro-steps strong { font-size: 13.5px; }
 .intro-steps span { color: var(--text-dim); font-size: 12.5px; }
+
+.intro-more { margin: 0; color: var(--text-dim); font-size: 13px; }
+
+/* Verweis auf den Hilfe-Tab – sieht aus wie ein Link, ist aber eine Schaltfläche. */
+.linklike {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 5px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+.linklike:hover { border-color: var(--accent); }
 
 /* ---------- Übersicht mit Torte ---------- */
 
@@ -583,33 +621,55 @@ a { color: var(--accent); }
 .bucket-item:last-child { border-bottom: 0; }
 .bucket-item .row.bucket { border-bottom: 0; }
 
+/* Der Einstieg in die Fixkosten läuft über die ganze Breite – sonst übersieht
+   man ihn zwischen den Kontozeilen. */
 .sub-toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  max-width: 100%;
-  margin-top: 2px;
-  padding: 3px 9px 3px 6px;
-  background: var(--surface-2);
-  color: var(--text-dim);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  margin: 2px 0 12px;
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--c-fix) 12%, var(--surface-2));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--c-fix) 45%, var(--line));
+  border-left: 4px solid var(--c-fix);
+  border-radius: 10px;
   font: inherit;
-  font-size: 12px;
   text-align: left;
   cursor: pointer;
 }
-.sub-toggle:hover { color: var(--text); border-color: var(--accent); }
-.sub-toggle .chev { transition: transform .15s ease; }
+.sub-toggle:hover { border-color: var(--c-fix); }
+
+.sub-toggle .chev { color: var(--c-fix); font-size: 13px; transition: transform .15s ease; }
 .sub-toggle.open .chev { transform: rotate(90deg); }
+
+.sub-title { font-weight: 600; font-size: 14px; }
+.sub-meta { color: var(--text-dim); font-size: 13px; }
+
+.sub-state {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Hängt sichtbar am Balken darüber: gemeinsame Kante, gleiche Farbe. */
+.sub-toggle.open { margin-bottom: 0; border-radius: 10px 10px 0 0; border-bottom-color: transparent; }
 
 .bucket-sub {
   margin: 0 0 14px;
-  padding: 14px 16px;
+  padding: 16px;
   background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--c-fix) 45%, var(--line));
+  border-left: 4px solid var(--c-fix);
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
 }
 
 .bucket-sub .fixed .row { border-color: color-mix(in srgb, var(--line) 65%, transparent); }
@@ -677,6 +737,17 @@ input[disabled] { opacity: .45; }
 }
 .btn:hover { border-color: var(--accent); }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Ausgabe-Knöpfe: farbig, damit sie sich von den Datei-Knöpfen abheben. */
+.btn.report, .btn.sheet {
+  color: #0d2b28;
+  font-weight: 600;
+}
+.btn.report { background: var(--c-urlaub); border-color: var(--c-urlaub); }
+.btn.sheet { background: var(--c-invest); border-color: var(--c-invest); color: #0c2c0c; }
+.btn.report:hover, .btn.sheet:hover { filter: brightness(1.08); }
+
+.head-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
 .icon {
   width: 32px;
@@ -1048,17 +1119,27 @@ input[disabled] { opacity: .45; }
   body > *:not(#print-sheet) { display: none !important; }
   #print-sheet { display: block; }
 
-  .report-head { margin-bottom: 14px; border-bottom: 1.5px solid #111; padding-bottom: 8px; }
-  .report-head h1 { font-size: 20pt; }
+  .report-head {
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #5b8def;
+  }
+  .report-head h1 { font-size: 20pt; color: #22345c; }
   .report-note { margin: 3px 0 0; color: #555; font-size: 9.5pt; }
 
   .report-totals {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px 18px;
+    gap: 8px;
     margin: 0 0 14px;
   }
-  .report-totals dt { color: #555; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .5px; }
+  .report-totals > div {
+    padding: 6px 10px;
+    background: #f2f5fb;
+    border-left: 3px solid #5b8def;
+    border-radius: 0 4px 4px 0;
+  }
+  .report-totals dt { color: #55607a; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .5px; }
   .report-totals dd { margin: 1px 0 0; font-size: 13pt; font-weight: 600; font-variant-numeric: tabular-nums; }
 
   .report-bar {
@@ -1073,29 +1154,53 @@ input[disabled] { opacity: .45; }
   .report-section { margin-bottom: 18px; break-inside: avoid; }
   .report-section h2 {
     margin-bottom: 6px;
-    color: #111;
-    font-size: 11pt;
+    padding: 4px 8px;
+    background: #22345c;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 10.5pt;
     text-transform: uppercase;
     letter-spacing: .8px;
   }
-  .report-sum { margin: 6px 0 0; font-size: 10pt; font-weight: 600; }
+  .report-sum {
+    margin: 6px 0 0;
+    padding: 5px 8px;
+    background: #f2f5fb;
+    border-left: 3px solid #5b8def;
+    font-size: 10pt;
+    font-weight: 600;
+  }
 
   .report-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
   .report-table th {
-    padding: 4px 6px;
-    border-bottom: 1px solid #111;
-    color: #444;
+    padding: 5px 6px;
+    background: #eef1f7;
+    border-bottom: 1.5px solid #22345c;
+    color: #22345c;
     font-size: 8.5pt;
     text-align: left;
     text-transform: uppercase;
     letter-spacing: .4px;
   }
-  .report-table td { padding: 5px 6px; border-bottom: 1px solid #ddd; vertical-align: top; }
+  .report-table td { padding: 5px 6px; border-bottom: 1px solid #dde2ea; vertical-align: middle; }
+  .report-table tbody tr:nth-child(even) td { background: #f7f9fc; }
   .report-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .report-table tr { break-inside: avoid; }
 
-  .report-name { display: inline-flex; align-items: baseline; gap: 6px; font-weight: 600; }
-  .report-dot { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+  .report-name { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; }
+  .report-dot { width: 5px; height: 14px; border-radius: 2px; flex: none; }
+
+  /* Anteil als Zahl mit Balken – auf Papier schneller zu erfassen als Prozente. */
+  .report-share { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .report-share-track {
+    width: 46px;
+    height: 7px;
+    background: #e3e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    flex: none;
+  }
+  .report-share-fill { display: block; height: 100%; }
 
   .report-foot {
     margin-top: 20px;
@@ -1163,6 +1268,13 @@ input[disabled] { opacity: .45; }
   }
 
   .name-cell { grid-column: 1 / -1; }
+  /* Die Bezeichnung der Fixkostenposition steht sonst in einer halben Spalte. */
+  .fixed .row > span:first-child { grid-column: 1 / -1; }
+
+  /* Titel und Zustand in eine Zeile, die Zahlen darunter. */
+  .sub-toggle { flex-wrap: wrap; gap: 8px 10px; padding: 10px 12px; }
+  .sub-state { order: 2; }
+  .sub-meta { order: 3; width: 100%; padding-left: 22px; }
   .buckets .row [data-role="yearly"],
   .buckets .row [data-role="share"],
   .wallets .row [data-role="share"] { display: none; }

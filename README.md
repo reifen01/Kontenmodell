@@ -47,8 +47,9 @@ Fordern die Konten mehr als das Einkommen hergibt, wird die Überziehung in der
 ## Fixkosten
 
 Die Fixkostenliste steckt im Konto, das auf dem Modus **Fixkosten** steht – dort
-klappt sie über die Schaltfläche unter dem Kontonamen auf, die zugleich Anzahl
-und Monatssumme anzeigt. Beim Laden rückt dieses Konto an die erste Stelle.
+klappt sie über einen Balken auf, der über die ganze Breite unter der Kontozeile
+läuft und Anzahl, Monatssumme sowie den Zustand („anzeigen" / „ausblenden")
+anzeigt. Beim Laden rückt dieses Konto an die erste Stelle.
 Steht kein Konto auf diesem Modus, erscheint die Liste in einer eigenen Karte
 unter den Konten, damit sie erreichbar bleibt. Ob der Bereich offen ist, merkt
 sich die App (`kontenmodell.fixkosten-offen`).
@@ -118,13 +119,26 @@ So zeigt der Lade-Dialog Datum und Umfang an, bevor der PIN abgefragt wird.
 Der PIN wird nirgends gespeichert: Geht er verloren, ist die Datei nicht mehr
 lesbar. Der Lade-Dialog akzeptiert auch unverschlüsselte JSON-Exporte.
 
+## CSV für Excel
+
+**📊 CSV für Excel** in der Karte *Daten* schreibt eine rechteckige Tabelle –
+eine Zeile je Eintrag, mit der Spalte `Bereich` als Unterscheidung
+(`Kennzahl`, `Konto`, `Fixkosten`, `Wallet`). So lässt sich in Excel filtern
+und pivotieren, statt mehrere Blöcke untereinander zu haben.
+
+Semikolon als Trenner, Komma als Dezimalzeichen, kein Währungszeichen (sonst
+rechnet Excel nicht damit weiter), UTF-8 mit BOM gegen zerschossene Umlaute und
+eine führende Zeile `sep=;`, damit Excel den Trenner nicht raten muss. Der
+Export ist eine Einbahnstraße – zum Wiedereinlesen dienen Backup und JSON.
+
 ## Bericht drucken
 
 **🖨 Bericht drucken** in der Karte *Daten* (oder Strg/Cmd + P) druckt nicht den
 Bildschirm ab, sondern ein eigenes Blatt: Kopfzeile mit Datum, die Kennzahlen,
 der Verteilungsbalken sowie Tabellen für Konten, Fixkosten und – sofern Wallets
 oder ein Bestand eingetragen sind – den Bitcoin-Teil. Eingabefelder, Tabs und
-Hinweise bleiben außen vor.
+Hinweise bleiben außen vor. Farbige Abschnittsbalken, Zebrastreifen und ein
+kleiner Anteilsbalken je Zeile machen den Ausdruck auf einen Blick lesbar.
 
 Das Blatt wird unmittelbar vor dem Druck aus dem aktuellen Stand aufgebaut; am
 Bildschirm ist es nie sichtbar. Die Kontofarben werden mit `print-color-adjust:

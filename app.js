@@ -358,6 +358,7 @@ function applyFixedOpen() {
     sub.hidden = !offen;
     toggle.setAttribute('aria-expanded', String(offen));
     toggle.classList.toggle('open', offen);
+    $('[data-role="sub-state"]', toggle).textContent = offen ? 'ausblenden' : 'anzeigen';
   }
 }
 
@@ -997,6 +998,12 @@ document.addEventListener('click', (event) => {
 
   if (action === 'toggle-fixed') toggleFixed();
   if (action === 'print') printReport();
+  if (action === 'csv') exportCsv();
+
+  if (action === 'goto-help') {
+    showTab('hilfe');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   if (action === 'export') exportJson();
   if (action === 'import') $('#import-file').click();
@@ -1729,12 +1736,27 @@ function reportTable(head, rows) {
   return table;
 }
 
-/** Kontoname mit Farbpunkt – auf Papier bleibt die Zuordnung zum Balken erkennbar. */
+/** Kontoname mit Farbbalken – auf Papier bleibt die Zuordnung zum Balken erkennbar. */
 function namePlate(bucket) {
   const wrap = el('span', 'report-name');
   const dot = el('span', 'report-dot');
   dot.style.background = bucket.color;
   wrap.append(dot, document.createTextNode(bucket.name || 'Konto'));
+  return wrap;
+}
+
+/** Anteil als Zahl mit kleinem Balken dahinter – liest sich schneller als Prozente. */
+function shareCell(amount, basis, color) {
+  const wrap = el('span', 'report-share');
+  wrap.appendChild(el('span', null, basis > 0 ? fmtPct((amount / basis) * 100) : '–'));
+
+  const track = el('span', 'report-share-track');
+  const fill = el('span', 'report-share-fill');
+  fill.style.width = `${basis > 0 ? Math.min(100, Math.max(0, (amount / basis) * 100)) : 0}%`;
+  fill.style.background = color;
+  track.appendChild(fill);
+  wrap.appendChild(track);
+
   return wrap;
 }
 
@@ -1804,7 +1826,7 @@ function buildReport() {
         MODE_LABEL[b.mode] ?? b.mode,
         bucketValueLabel(b),
         fmtEUR(amount),
-        result.income > 0 ? fmtPct((amount / result.income) * 100) : '–',
+        shareCell(amount, result.income, b.color),
         fmtEUR(amount * 12),
       ];
     }),
@@ -1861,7 +1883,7 @@ function buildReport() {
             w.note || '',
             MODE_LABEL[w.mode] ?? w.mode,
             fmtEUR(amount),
-            cfg.holdings > 0 ? fmtPct((amount / cfg.holdings) * 100) : '–',
+            shareCell(amount, cfg.holdings, w.color),
           ];
         }),
       ));
@@ -1886,6 +1908,104 @@ window.addEventListener('beforeprint', buildReport);
 function printReport() {
   buildReport();
   window.print();
+}
+
+/* ============================ CSV für Excel ============================
+ *
+ * Eine rechteckige Tabelle statt mehrerer Blöcke: So lässt sich in Excel
+ * filtern und pivotieren. Semikolon als Trenner, Komma als Dezimalzeichen und
+ * ein BOM voran – damit deutsche Excel-Versionen Umlaute und Zahlen richtig
+ * erkennen. Die Zeile „sep=;" nimmt Excel das Raten ab.
+ */
+
+const CSV_COLUMNS = [
+  'Bereich', 'Bezeichnung', 'Zweck', 'Modus', 'Wert', 'Turnus',
+  'Pro Monat', 'Pro Jahr', 'Anteil %',
+];
+
+/** Zahl ohne Währungszeichen, mit Komma – so rechnet Excel damit weiter. */
+const csvNum = (n) => (Number.isFinite(n) ? n : 0).toFixed(2).replace('.', ',');
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function buildCsv() {
+  const result = compute();
+  const cfg = btc();
+  const rows = [];
+
+  const anteil = (amount, basis) => (basis > 0 ? csvNum((amount / basis) * 100) : '');
+
+  /* Kennzahlen zuerst – damit die Eckdaten beim Öffnen oben stehen. */
+  rows.push(['Kennzahl', 'Monatliches Nettoeinkommen', '', '', '', '', csvNum(result.income), csvNum(result.income * 12), '']);
+  rows.push(['Kennzahl', 'Zugeteilt', '', '', '', '', csvNum(result.allocated), csvNum(result.allocated * 12), anteil(result.allocated, result.income)]);
+  rows.push(['Kennzahl', 'Fixkosten', '', '', '', '', csvNum(result.fixedMonthly), csvNum(result.fixedMonthly * 12), csvNum(result.fixedRate)]);
+  rows.push(['Kennzahl', result.rest < 0 ? 'Überzogen' : 'Rest auf Hausbank', '', '', '', '', csvNum(result.rest), csvNum(result.rest * 12), anteil(result.rest, result.income)]);
+
+  for (const b of state.buckets) {
+    const amount = result.amounts.get(b.id) ?? 0;
+    rows.push([
+      'Konto',
+      b.name || 'Konto',
+      b.note,
+      MODE_LABEL[b.mode] ?? b.mode,
+      b.mode === 'percent' || b.mode === 'fixed' ? csvNum(b.value) : '',
+      '',
+      csvNum(amount),
+      csvNum(amount * 12),
+      anteil(amount, result.income),
+    ]);
+  }
+
+  for (const f of state.fixedCosts) {
+    const monthly = monthlyOf(f);
+    rows.push([
+      'Fixkosten',
+      f.name || 'Position',
+      '',
+      '',
+      csvNum(f.amount),
+      FREQ_LABEL[f.freq] ?? f.freq,
+      csvNum(monthly),
+      csvNum(monthly * 12),
+      anteil(monthly, result.fixedMonthly),
+    ]);
+  }
+
+  if (cfg.wallets.length) {
+    const btcResult = computeBitcoin();
+    for (const w of cfg.wallets) {
+      const amount = btcResult.amounts.get(w.id) ?? 0;
+      rows.push([
+        'Wallet',
+        w.name || 'Wallet',
+        w.note,
+        MODE_LABEL[w.mode] ?? w.mode,
+        w.mode === 'percent' || w.mode === 'fixed' ? csvNum(w.value) : '',
+        '',
+        csvNum(amount),
+        '',
+        anteil(amount, cfg.holdings),
+      ]);
+    }
+  }
+
+  const lines = [CSV_COLUMNS, ...rows].map((cells) => cells.map(csvCell).join(';'));
+  return `sep=;\r\n${lines.join('\r\n')}\r\n`;
+}
+
+function exportCsv() {
+  /* ﻿: ohne BOM zeigt Excel „Risikorücklage" als „RisikorÃ¼cklage". */
+  const blob = new Blob([`﻿${buildCsv()}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = backupFilename(new Date().toISOString()).replace('_AES256.json', '.csv');
+  link.click();
+  URL.revokeObjectURL(url);
+  toast('📊 CSV gespeichert – in Excel mit Semikolon als Trenner.');
 }
 
 /* ---------- Start ---------- */

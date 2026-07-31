@@ -472,6 +472,7 @@
     <section class="card" aria-labelledby="data-title">
       <div class="card-head">
         <h2 id="data-title">Daten</h2>
+        <button type="button" class="btn" data-action="print">🖨 Bericht drucken</button>
       </div>
       <div class="actions">
         <button type="button" class="btn primary" data-action="backup-create">🔒 Backup mit PIN</button>
@@ -637,6 +638,9 @@
   </aside>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Wird vor dem Drucken aus dem aktuellen Stand gefüllt; am Bildschirm unsichtbar. -->
+  <div id="print-sheet" class="print-only" aria-hidden="true"></div>
 
   <!-- ============================ App installieren ============================ -->
   <aside id="install-banner" class="floater" hidden>

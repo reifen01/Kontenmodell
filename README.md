@@ -118,6 +118,19 @@ So zeigt der Lade-Dialog Datum und Umfang an, bevor der PIN abgefragt wird.
 Der PIN wird nirgends gespeichert: Geht er verloren, ist die Datei nicht mehr
 lesbar. Der Lade-Dialog akzeptiert auch unverschlüsselte JSON-Exporte.
 
+## Bericht drucken
+
+**🖨 Bericht drucken** in der Karte *Daten* (oder Strg/Cmd + P) druckt nicht den
+Bildschirm ab, sondern ein eigenes Blatt: Kopfzeile mit Datum, die Kennzahlen,
+der Verteilungsbalken sowie Tabellen für Konten, Fixkosten und – sofern Wallets
+oder ein Bestand eingetragen sind – den Bitcoin-Teil. Eingabefelder, Tabs und
+Hinweise bleiben außen vor.
+
+Das Blatt wird unmittelbar vor dem Druck aus dem aktuellen Stand aufgebaut; am
+Bildschirm ist es nie sichtbar. Die Kontofarben werden mit `print-color-adjust:
+exact` erzwungen, damit die Punkte in den Tabellen zum Balken passen. Als Ziel
+funktioniert auch „Als PDF sichern".
+
 ## Veröffentlichen (Vercel)
 
 Das Repository ist bei Vercel eingebunden: Jeder Push auf `main` wird

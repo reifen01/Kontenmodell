@@ -996,6 +996,7 @@ document.addEventListener('click', (event) => {
   }
 
   if (action === 'toggle-fixed') toggleFixed();
+  if (action === 'print') printReport();
 
   if (action === 'export') exportJson();
   if (action === 'import') $('#import-file').click();
@@ -1661,6 +1662,230 @@ async function showBuildId() {
   } catch {
     /* Offline oder ohne Server – dann bleibt die Kennung eben aus. */
   }
+}
+
+/* ============================ Bericht drucken ============================
+ *
+ * Gedruckt wird nicht der Bildschirm, sondern ein eigenes Blatt: Eingabefelder
+ * und Schaltflächen ergeben auf Papier keinen Sinn. Es wird unmittelbar vor
+ * dem Druck aus dem aktuellen Stand aufgebaut.
+ */
+
+const MODE_LABEL = {
+  percent: 'Prozent',
+  fixed: 'Fester Betrag',
+  linked: 'Fixkosten',
+  rest: 'Rest',
+};
+
+const FREQ_LABEL = {
+  monthly: 'monatlich',
+  quarterly: 'quartalsweise',
+  halfyearly: 'halbjährlich',
+  yearly: 'jährlich',
+};
+
+const INTERVAL_LABEL = {
+  daily: 'täglich',
+  weekly: 'wöchentlich',
+  monthly: 'monatlich',
+};
+
+const printSheet = $('#print-sheet');
+
+/** Kleiner Baustein: Element mit Klasse und Text. */
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+/** Tabelle aus Kopfzeile und Zeilen; Zellen mit führendem "#" werden rechtsbündig. */
+function reportTable(head, rows) {
+  const table = el('table', 'report-table');
+
+  const thead = el('thead');
+  const headRow = el('tr');
+  for (const label of head) {
+    const th = el('th', label.startsWith('#') ? 'num' : '', label.replace(/^#/, ''));
+    headRow.appendChild(th);
+  }
+  thead.appendChild(headRow);
+
+  const tbody = el('tbody');
+  for (const cells of rows) {
+    const tr = el('tr');
+    cells.forEach((cell, i) => {
+      const td = el('td', head[i].startsWith('#') ? 'num' : '');
+      if (cell instanceof Node) td.appendChild(cell);
+      else td.textContent = cell;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+
+  table.append(thead, tbody);
+  return table;
+}
+
+/** Kontoname mit Farbpunkt – auf Papier bleibt die Zuordnung zum Balken erkennbar. */
+function namePlate(bucket) {
+  const wrap = el('span', 'report-name');
+  const dot = el('span', 'report-dot');
+  dot.style.background = bucket.color;
+  wrap.append(dot, document.createTextNode(bucket.name || 'Konto'));
+  return wrap;
+}
+
+function reportSection(title, note) {
+  const section = el('section', 'report-section');
+  section.appendChild(el('h2', null, title));
+  if (note) section.appendChild(el('p', 'report-note', note));
+  return section;
+}
+
+function bucketValueLabel(bucket) {
+  if (bucket.mode === 'percent') return fmtPct(bucket.value);
+  if (bucket.mode === 'fixed') return fmtEUR(bucket.value);
+  if (bucket.mode === 'linked') return 'aus Fixkosten';
+  return 'Rest';
+}
+
+function buildReport() {
+  const result = compute();
+  const over = result.rest < -0.005;
+  const scale = Math.max(result.income, result.allocated);
+  const parts = [];
+
+  /* ---- Kopf ---- */
+  const head = el('header', 'report-head');
+  head.appendChild(el('h1', null, 'Kontenmodell'));
+  head.appendChild(el('p', 'report-note',
+    `Bericht vom ${new Date().toLocaleString('de-DE', { dateStyle: 'long', timeStyle: 'short' })}`));
+  parts.push(head);
+
+  /* ---- Kennzahlen ---- */
+  const kennzahlen = [
+    ['Monatliches Nettoeinkommen', fmtEUR(result.income)],
+    ['Zugeteilt', fmtEUR(result.allocated)],
+    ['Fixkosten pro Monat', fmtEUR(result.fixedMonthly)],
+    [over ? 'Überzogen' : 'Rest auf Hausbank', fmtEUR(Math.abs(result.rest))],
+    ['Fixkostenquote', fmtPct(result.fixedRate)],
+    ['Konten', String(state.buckets.length)],
+  ];
+
+  const totals = el('dl', 'report-totals');
+  for (const [label, value] of kennzahlen) {
+    const box = el('div');
+    box.append(el('dt', null, label), el('dd', null, value));
+    totals.appendChild(box);
+  }
+  parts.push(totals);
+
+  const bar = el('div', 'bar report-bar');
+  paintBar(bar, distributionParts(result), scale, over);
+  parts.push(bar);
+
+  if (over) {
+    parts.push(el('p', 'report-warn',
+      `Die Konten fordern ${fmtEUR(Math.abs(result.rest))} mehr, als das Einkommen hergibt.`));
+  }
+
+  /* ---- Konten ---- */
+  const konten = reportSection('Konten');
+  konten.appendChild(reportTable(
+    ['Konto', 'Zweck', 'Modus', '#Wert', '#pro Monat', '#Anteil', '#pro Jahr'],
+    state.buckets.map((b) => {
+      const amount = result.amounts.get(b.id) ?? 0;
+      return [
+        namePlate(b),
+        b.note || '',
+        MODE_LABEL[b.mode] ?? b.mode,
+        bucketValueLabel(b),
+        fmtEUR(amount),
+        result.income > 0 ? fmtPct((amount / result.income) * 100) : '–',
+        fmtEUR(amount * 12),
+      ];
+    }),
+  ));
+  parts.push(konten);
+
+  /* ---- Fixkosten ---- */
+  const fixkosten = reportSection('Fixkosten',
+    'Quartals-, Halbjahres- und Jahresbeträge sind auf den Monat umgerechnet.');
+  fixkosten.appendChild(reportTable(
+    ['Position', '#Betrag', 'Turnus', '#pro Monat', '#pro Jahr'],
+    state.fixedCosts.map((f) => [
+      f.name || 'Position',
+      fmtEUR(f.amount),
+      FREQ_LABEL[f.freq] ?? f.freq,
+      fmtEUR(monthlyOf(f)),
+      fmtEUR(monthlyOf(f) * 12),
+    ]),
+  ));
+  fixkosten.appendChild(el('p', 'report-sum',
+    `Summe: ${fmtEUR(result.fixedMonthly)} pro Monat · ${fmtEUR(result.fixedMonthly * 12)} pro Jahr`));
+  parts.push(fixkosten);
+
+  /* ---- Bitcoin ---- */
+  const cfg = btc();
+  if (cfg.wallets.length || cfg.holdings > 0) {
+    const btcResult = computeBitcoin();
+    const bitcoin = reportSection('Bitcoin');
+
+    const zahlen = el('dl', 'report-totals');
+    for (const [label, value] of [
+      ['Sparrate pro Monat', fmtEUR(btcResult.rate)],
+      ['Intervall', INTERVAL_LABEL[cfg.interval] ?? cfg.interval],
+      ['Bitcoin-Kurs', fmtEUR(cfg.price)],
+      ['Pro Kauf', fmtEUR(btcResult.perBuy)],
+      ['Sats pro Kauf', fmtSats(btcResult.satsPerBuy)],
+      ['Ziel-UTXO', fmtSats(cfg.targetSats)],
+      ['Käufe bis Zielgröße', Number.isFinite(btcResult.buysToTarget) ? ints.format(btcResult.buysToTarget) : '–'],
+      ['Bestand', `${fmtEUR(cfg.holdings)} · ${fmtBTC(btcResult.holdingsBtc)}`],
+    ]) {
+      const box = el('div');
+      box.append(el('dt', null, label), el('dd', null, value));
+      zahlen.appendChild(box);
+    }
+    bitcoin.appendChild(zahlen);
+
+    if (cfg.wallets.length) {
+      bitcoin.appendChild(reportTable(
+        ['Wallet', 'Zweck', 'Modus', '#Betrag', '#Anteil'],
+        cfg.wallets.map((w) => {
+          const amount = btcResult.amounts.get(w.id) ?? 0;
+          return [
+            namePlate(w),
+            w.note || '',
+            MODE_LABEL[w.mode] ?? w.mode,
+            fmtEUR(amount),
+            cfg.holdings > 0 ? fmtPct((amount / cfg.holdings) * 100) : '–',
+          ];
+        }),
+      ));
+    }
+    parts.push(bitcoin);
+  }
+
+  /* ---- Fuß ---- */
+  const kennung = $('[data-role="build-id"]').textContent;
+  parts.push(el('footer', 'report-foot',
+    ['Kontenmodell nach der Folge zum Kontenmodell von „Der Bitcoin Podcast" (Florian Bruce).',
+      'Keine Finanz- oder Steuerberatung.',
+      kennung && `Fassung ${kennung}`,
+    ].filter(Boolean).join(' ')));
+
+  printSheet.replaceChildren(...parts);
+}
+
+/* Auch Strg/Cmd + P soll ein gefülltes Blatt vorfinden. */
+window.addEventListener('beforeprint', buildReport);
+
+function printReport() {
+  buildReport();
+  window.print();
 }
 
 /* ---------- Start ---------- */

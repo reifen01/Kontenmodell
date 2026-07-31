@@ -52,35 +52,118 @@
   <main>
     <!-- ============================ Privates Kontomodell ============================ -->
     <div id="panel-privat" role="tabpanel" aria-labelledby="tab-privat" class="panel" data-panel="privat">
+      <!-- ---------------------------- Einstieg ---------------------------- -->
+      <section class="card intro" aria-labelledby="intro-title">
+        <div class="intro-head">
+          <div>
+            <p class="kicker">Mehrkonten-Modell</p>
+            <h2 id="intro-title" class="plain">So funktioniert es</h2>
+          </div>
+          <p class="credit">nach der Folge von<br><strong>Der Bitcoin Podcast</strong> · Florian Bruce</p>
+        </div>
+
+        <a class="video-link" href="https://www.youtube.com/watch?v=y0x3zknAink"
+           target="_blank" rel="noopener noreferrer">
+          <span class="video-mark" aria-hidden="true">▶</span>
+          <span class="video-text">
+            <strong>Kontenmodell erklärt</strong>
+            <span>Zur Erklärung des Kontenmodells kannst du dieses Video ansehen.</span>
+          </span>
+          <span class="video-go" aria-hidden="true">→</span>
+        </a>
+
+        <ol class="intro-steps">
+          <li>
+            <strong>Einkommen eintragen</strong>
+            <span>Oben rechts das monatliche Netto – alles Weitere rechnet sich daraus.</span>
+          </li>
+          <li>
+            <strong>Fixkosten sammeln</strong>
+            <span>Beim Konto „Fixkosten" aufklappen; Jahres- und Quartalsbeträge werden auf den Monat umgelegt.</span>
+          </li>
+          <li>
+            <strong>Konten verteilen</strong>
+            <span>Prozent oder fester Betrag. Was übrig bleibt, liegt als Puffer auf der Hausbank.</span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ---------------------------- Übersicht ---------------------------- -->
       <section class="card summary" aria-labelledby="summary-title">
-        <h2 id="summary-title">Übersicht</h2>
+        <div class="card-head">
+          <h2 id="summary-title">Übersicht</h2>
+          <span class="card-note">automatisch berechnet</span>
+        </div>
 
-        <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+        <div class="summary-grid">
+          <figure class="donut">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Verteilung des Einkommens auf die Konten">
+              <g data-role="donut-ring" transform="rotate(-90 60 60)"></g>
+            </svg>
+            <figcaption>
+              <span>Einkommen</span>
+              <strong data-role="donut-total">–</strong>
+            </figcaption>
+          </figure>
 
-        <dl class="totals">
-          <div>
-            <dt>Zugeteilt</dt>
-            <dd data-role="total-allocated">–</dd>
+          <div class="summary-side">
+            <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+
+            <dl class="totals">
+              <div>
+                <dt>Zugeteilt</dt>
+                <dd data-role="total-allocated">–</dd>
+              </div>
+              <div>
+                <dt>Fixkosten (monatlich)</dt>
+                <dd data-role="total-fixed">–</dd>
+              </div>
+              <div>
+                <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
+                <dd data-role="total-rest">–</dd>
+              </div>
+              <div>
+                <dt>Fixkostenquote</dt>
+                <dd data-role="fixed-rate">–</dd>
+              </div>
+              <div>
+                <dt>Konten</dt>
+                <dd data-role="bucket-count">–</dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt>Fixkosten (monatlich)</dt>
-            <dd data-role="total-fixed">–</dd>
-          </div>
-          <div>
-            <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
-            <dd data-role="total-rest">–</dd>
-          </div>
-          <div>
-            <dt>Fixkostenquote</dt>
-            <dd data-role="fixed-rate">–</dd>
-          </div>
-          <div>
-            <dt>Konten</dt>
-            <dd data-role="bucket-count">–</dd>
-          </div>
-        </dl>
+        </div>
 
         <p class="hint" data-role="warning" hidden></p>
+      </section>
+
+      <!-- ---------------------------- Geldfluss ---------------------------- -->
+      <section class="card" aria-labelledby="moneyflow-title">
+        <div class="card-head">
+          <h2 id="moneyflow-title">Geldfluss</h2>
+          <span class="card-note">so wandert dein Geld vom Eingang auf die Konten</span>
+        </div>
+
+        <div class="moneyflow" data-role="moneyflow">
+          <div class="mf-income">
+            <span>Einkommen (netto)</span>
+            <strong data-role="mf-income">–</strong>
+          </div>
+
+          <div class="mf-drop" aria-hidden="true"></div>
+
+          <div class="mf-hub">
+            <strong>Geldeingang · Hausbank</strong>
+            <span class="mf-hub-amount" data-role="mf-hub-amount">–</span>
+            <span class="mf-hub-note" data-role="mf-hub-note">–</span>
+          </div>
+
+          <div class="mf-fan" aria-hidden="true"><span class="mf-rail"></span></div>
+
+          <div class="mf-targets" data-role="mf-targets"></div>
+
+          <p class="hint" data-role="mf-empty" hidden>Noch keine Konten angelegt.</p>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="buckets-title">
@@ -104,25 +187,39 @@
 
         <p class="hint">
           <strong>Prozent</strong> = Anteil vom Einkommen · <strong>Fester Betrag</strong> = feste Summe ·
-          <strong>Fixkosten</strong> = Summe aller Fixkosten unten · <strong>Rest</strong> = was übrig bleibt.
+          <strong>Fixkosten</strong> = Summe der Positionen im aufklappbaren Bereich · <strong>Rest</strong> = was übrig bleibt.
         </p>
       </section>
 
-      <section class="card" aria-labelledby="fixed-title">
-        <div class="card-head">
-          <h2 id="fixed-title">Fixkosten</h2>
-          <button type="button" class="btn" data-action="add-fixed">+ Position</button>
-        </div>
+      <!-- Der Fixkosten-Block hängt normalerweise im Konto „Fixkosten"; steht kein
+           Konto auf diesem Modus, nimmt ihn diese Karte auf. -->
+      <section class="card" id="fixed-fallback" aria-labelledby="fixed-title" hidden>
+        <p class="hint fallback-note">
+          Kein Konto steht auf „Fixkosten" – die Positionen stehen deshalb hier.
+        </p>
+        <div id="fixed-host">
+          <div class="fixed-block" id="fixed-block">
+            <div class="card-head">
+              <h2 id="fixed-title">Fixkosten</h2>
+              <button type="button" class="btn" data-action="add-fixed">+ Position</button>
+            </div>
 
-        <div class="table fixed" id="fixed">
-          <div class="row head" aria-hidden="true">
-            <span>Position</span>
-            <span class="num">Betrag</span>
-            <span>Turnus</span>
-            <span class="num">pro Monat</span>
-            <span></span>
+            <div class="table fixed" id="fixed">
+              <div class="row head" aria-hidden="true">
+                <span>Position</span>
+                <span class="num">Betrag</span>
+                <span>Turnus</span>
+                <span class="num">pro Monat</span>
+                <span></span>
+              </div>
+              <div id="fixed-rows"></div>
+            </div>
+
+            <p class="hint">
+              Turnus wählen – Quartals-, Halbjahres- und Jahresbeträge rechnet die Seite
+              auf den Monat herunter.
+            </p>
           </div>
-          <div id="fixed-rows"></div>
         </div>
       </section>
     </div>
@@ -319,7 +416,7 @@
       <section class="card" aria-labelledby="setup-title">
         <h2 id="setup-title">In vier Schritten einrichten</h2>
         <ol class="numbered">
-          <li><strong>Fixkosten sammeln.</strong> Im Tab <em>Privat</em> unten eintragen, Turnus wählen – die Monatswerte rechnet die Seite aus.</li>
+          <li><strong>Fixkosten sammeln.</strong> Im Tab <em>Privat</em> beim Konto <em>Fixkosten</em> aufklappen, Turnus wählen – die Monatswerte rechnet die Seite aus.</li>
           <li><strong>Konten festlegen.</strong> Beträge oder Prozente so lange verschieben, bis die Aufteilung zum eigenen Leben passt.</li>
           <li><strong>Konten eröffnen.</strong> Daueraufträge auf den Tag nach dem Gehaltseingang legen, damit die Verteilung von allein läuft.</li>
           <li><strong>Nach zwei bis drei Monaten nachjustieren.</strong> Meist ist das Lifestyle-Konto zu knapp oder die Risikorücklage zu niedrig.</li>
@@ -365,8 +462,9 @@
           wofür dein Geld da sein soll – und hältst dich anschließend nicht mehr selbst auf.
         </p>
         <p class="hint">
-          Inhaltlich zusammengefasst aus der Folge zum Kontenmodell von „Der Bitcoin Podcast"
-          (Florian Bruce). Keine Finanz- oder Steuerberatung.
+          Inhaltlich zusammengefasst aus der
+          <a href="https://www.youtube.com/watch?v=y0x3zknAink" target="_blank" rel="noopener noreferrer">Folge zum Kontenmodell</a>
+          von „Der Bitcoin Podcast" (Florian Bruce). Keine Finanz- oder Steuerberatung.
         </p>
       </section>
     </div>
@@ -561,32 +659,41 @@
   </aside>
 
   <template id="tpl-bucket">
-    <div class="row bucket">
-      <span class="name-cell">
-        <span class="swatch" data-role="swatch"></span>
-        <span class="name-stack">
-          <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
-          <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
+    <div class="bucket-item">
+      <div class="row bucket">
+        <span class="name-cell">
+          <span class="swatch" data-role="swatch"></span>
+          <span class="name-stack">
+            <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
+            <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
+            <button type="button" class="sub-toggle" data-action="toggle-fixed" aria-expanded="false" hidden>
+              <span class="chev" aria-hidden="true">▸</span>
+              <span data-role="sub-label">Fixkosten</span>
+            </button>
+          </span>
         </span>
-      </span>
-      <span>
-        <select data-field="mode">
-          <option value="percent">Prozent</option>
-          <option value="fixed">Fester Betrag</option>
-          <option value="linked">Fixkosten</option>
-          <option value="rest">Rest</option>
-        </select>
-      </span>
-      <span class="value-cell">
-        <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
-        <span class="unit" data-role="value-unit"></span>
-      </span>
-      <span class="num" data-role="monthly">–</span>
-      <span class="num muted" data-role="share">–</span>
-      <span class="num muted" data-role="yearly">–</span>
-      <span class="row-actions">
-        <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
-      </span>
+        <span>
+          <select data-field="mode">
+            <option value="percent">Prozent</option>
+            <option value="fixed">Fester Betrag</option>
+            <option value="linked">Fixkosten</option>
+            <option value="rest">Rest</option>
+          </select>
+        </span>
+        <span class="value-cell">
+          <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
+          <span class="unit" data-role="value-unit"></span>
+        </span>
+        <span class="num" data-role="monthly">–</span>
+        <span class="num muted" data-role="share">–</span>
+        <span class="num muted" data-role="yearly">–</span>
+        <span class="row-actions">
+          <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
+        </span>
+      </div>
+
+      <!-- nimmt bei „Fixkosten" den ausklappbaren Fixkosten-Block auf -->
+      <div class="bucket-sub" data-role="sub" hidden></div>
     </div>
   </template>
 

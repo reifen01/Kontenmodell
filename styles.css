@@ -239,7 +239,285 @@ main {
   margin-bottom: 14px;
 }
 
-.summary h2 { margin-bottom: 14px; }
+h2.plain { font-size: 18px; color: var(--text); text-transform: none; letter-spacing: .2px; }
+
+.card-note { color: var(--text-dim); font-size: 12.5px; text-align: right; }
+
+a { color: var(--accent); }
+
+/* ---------- Einstieg ---------- */
+
+.intro { display: flex; flex-direction: column; gap: 16px; }
+
+.intro-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.kicker {
+  margin: 0 0 2px;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.credit { margin: 0; color: var(--text-dim); font-size: 12px; text-align: right; line-height: 1.5; }
+.credit strong { color: var(--text); }
+
+.video-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.video-link:hover { border-color: var(--danger); }
+
+.video-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 28px;
+  background: #e02f2f;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.video-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.video-text strong { font-size: 14px; }
+.video-text span { color: var(--text-dim); font-size: 12.5px; }
+.video-go { margin-left: auto; color: var(--text-dim); flex: none; }
+
+.intro-steps {
+  counter-reset: intro;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intro-steps li {
+  counter-increment: intro;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 10px 40px;
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.intro-steps li::before {
+  content: counter(intro);
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.intro-steps strong { font-size: 13.5px; }
+.intro-steps span { color: var(--text-dim); font-size: 12.5px; }
+
+/* ---------- Übersicht mit Torte ---------- */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.summary-side { min-width: 0; }
+
+.donut { position: relative; width: 168px; height: 168px; margin: 0; justify-self: center; }
+.donut svg { display: block; width: 100%; height: 100%; }
+.donut circle { transition: stroke-dasharray .18s ease, stroke-dashoffset .18s ease; }
+
+.donut figcaption {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  text-align: center;
+  pointer-events: none;
+}
+.donut figcaption span {
+  color: var(--text-dim);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.donut figcaption strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+
+/* ---------- Geldfluss ---------- */
+
+.moneyflow { display: flex; flex-direction: column; align-items: center; }
+
+.mf-income {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--ok) 10%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, var(--line));
+  border-radius: 999px;
+}
+.mf-income span { color: var(--text-dim); font-size: 12.5px; }
+.mf-income strong { font-variant-numeric: tabular-nums; }
+
+/* Senkrechte Verbindung mit Pfeilspitze */
+.mf-drop { position: relative; width: 2px; height: 26px; background: var(--line); }
+.mf-drop::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--line);
+}
+
+.mf-hub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 24px;
+  background: #12161e;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  /* Im dunklen Schema hebt sich der Kasten sonst kaum von der Karte ab. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 8px 22px #0000004d;
+  color: #eef2f8;
+  text-align: center;
+}
+.mf-hub > strong { font-size: 13.5px; }
+.mf-hub-amount { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mf-hub-note { color: #d9a521; font-size: 12px; }
+.mf-hub-note.over { color: #ff8a80; }
+
+.mf-fan { position: relative; width: 100%; height: 16px; }
+.mf-fan::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  background: var(--line);
+}
+/* Pfeil, wenn es keinen Fächer gibt (gestapelte Ansicht) */
+.mf-fan::after {
+  content: "";
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--line);
+}
+
+.mf-rail {
+  position: absolute;
+  bottom: 0;
+  left: var(--rail-left, 25%);
+  right: var(--rail-right, 25%);
+  height: 2px;
+  background: var(--line);
+}
+
+.mf-targets {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.mf-target {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 9px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--tint, var(--c-rest));
+  border-radius: 10px;
+  text-align: center;
+}
+
+.mf-target::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 12px;
+  background: var(--line);
+}
+.mf-target::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--line);
+}
+
+.mf-name { font-size: 12.5px; overflow-wrap: anywhere; }
+.mf-amount { font-size: 15px; font-variant-numeric: tabular-nums; }
+.mf-share { color: var(--text-dim); font-size: 11.5px; }
+
+/* Gestapelt: kein Fächer, dafür ein Pfeil und farbige Kanten links. */
+.moneyflow.stacked .mf-rail,
+.moneyflow.stacked .mf-target::before,
+.moneyflow.stacked .mf-target::after { display: none; }
+
+.moneyflow.stacked .mf-fan::after { display: block; }
+.moneyflow.stacked .mf-targets {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: 10px;
+}
+.moneyflow.stacked .mf-target {
+  align-items: flex-start;
+  text-align: left;
+  border-top: 1px solid var(--line);
+  border-left: 3px solid var(--tint, var(--c-rest));
+}
+
+.moneyflow.empty .mf-fan { display: none; }
+.moneyflow.empty .hint { margin-top: 14px; }
 
 /* ---------- Balken ---------- */
 
@@ -298,6 +576,46 @@ main {
 }
 
 .row:last-child { border-bottom: 0; }
+
+/* ---------- Konto mit ausklappbarem Bereich ---------- */
+
+.bucket-item { border-bottom: 1px solid var(--line); }
+.bucket-item:last-child { border-bottom: 0; }
+.bucket-item .row.bucket { border-bottom: 0; }
+
+.sub-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 3px 9px 3px 6px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.sub-toggle:hover { color: var(--text); border-color: var(--accent); }
+.sub-toggle .chev { transition: transform .15s ease; }
+.sub-toggle.open .chev { transform: rotate(90deg); }
+
+.bucket-sub {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.bucket-sub .fixed .row { border-color: color-mix(in srgb, var(--line) 65%, transparent); }
+.bucket-sub input, .bucket-sub select { background: var(--surface); }
+.fixed-block .card-head { margin-bottom: 10px; }
+.fallback-note { margin: 0 0 14px; }
 
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .muted { color: var(--text-dim); }
@@ -732,12 +1050,35 @@ input[disabled] { opacity: .45; }
 
 /* ---------- Mobil ---------- */
 
+@media (max-width: 760px) {
+  /* Für den Fächer ist zu wenig Platz – untereinander liest es sich besser. */
+  .mf-rail, .mf-target::before, .mf-target::after { display: none; }
+  .mf-fan::after { display: block; }
+  .mf-targets {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin-top: 10px;
+  }
+  .mf-target {
+    align-items: flex-start;
+    text-align: left;
+    border-top: 1px solid var(--line);
+    border-left: 3px solid var(--tint, var(--c-rest));
+  }
+  .mf-hub { width: 100%; }
+
+  .summary-grid { grid-template-columns: 1fr; gap: 16px; }
+  .intro-head { flex-direction: column; gap: 6px; }
+  .credit { text-align: left; }
+  .card-note { display: none; }
+}
+
 @media (max-width: 820px) {
   /* Auf kleinen Displays braucht die Kopfzeile zwei Zeilen – dann lieber mitscrollen. */
   .topbar { position: static; }
   .topbar-inner { padding: 12px 16px; }
   main { padding: var(--gap) 16px 48px; }
   .card { padding: 16px; }
+  .bucket-sub { padding: 12px; }
 
   .buckets .row, .fixed .row, .wallets .row { grid-template-columns: 1fr 1fr; }
   .row.head { display: none; }

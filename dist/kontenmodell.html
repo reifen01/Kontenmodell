@@ -253,7 +253,285 @@ main {
   margin-bottom: 14px;
 }
 
-.summary h2 { margin-bottom: 14px; }
+h2.plain { font-size: 18px; color: var(--text); text-transform: none; letter-spacing: .2px; }
+
+.card-note { color: var(--text-dim); font-size: 12.5px; text-align: right; }
+
+a { color: var(--accent); }
+
+/* ---------- Einstieg ---------- */
+
+.intro { display: flex; flex-direction: column; gap: 16px; }
+
+.intro-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.kicker {
+  margin: 0 0 2px;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.credit { margin: 0; color: var(--text-dim); font-size: 12px; text-align: right; line-height: 1.5; }
+.credit strong { color: var(--text); }
+
+.video-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.video-link:hover { border-color: var(--danger); }
+
+.video-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 28px;
+  background: #e02f2f;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.video-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.video-text strong { font-size: 14px; }
+.video-text span { color: var(--text-dim); font-size: 12.5px; }
+.video-go { margin-left: auto; color: var(--text-dim); flex: none; }
+
+.intro-steps {
+  counter-reset: intro;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intro-steps li {
+  counter-increment: intro;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 10px 40px;
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.intro-steps li::before {
+  content: counter(intro);
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.intro-steps strong { font-size: 13.5px; }
+.intro-steps span { color: var(--text-dim); font-size: 12.5px; }
+
+/* ---------- Übersicht mit Torte ---------- */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+.summary-side { min-width: 0; }
+
+.donut { position: relative; width: 168px; height: 168px; margin: 0; justify-self: center; }
+.donut svg { display: block; width: 100%; height: 100%; }
+.donut circle { transition: stroke-dasharray .18s ease, stroke-dashoffset .18s ease; }
+
+.donut figcaption {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  text-align: center;
+  pointer-events: none;
+}
+.donut figcaption span {
+  color: var(--text-dim);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.donut figcaption strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+
+/* ---------- Geldfluss ---------- */
+
+.moneyflow { display: flex; flex-direction: column; align-items: center; }
+
+.mf-income {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--ok) 10%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, var(--line));
+  border-radius: 999px;
+}
+.mf-income span { color: var(--text-dim); font-size: 12.5px; }
+.mf-income strong { font-variant-numeric: tabular-nums; }
+
+/* Senkrechte Verbindung mit Pfeilspitze */
+.mf-drop { position: relative; width: 2px; height: 26px; background: var(--line); }
+.mf-drop::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--line);
+}
+
+.mf-hub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 24px;
+  background: #12161e;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  /* Im dunklen Schema hebt sich der Kasten sonst kaum von der Karte ab. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 10%, transparent), 0 8px 22px #0000004d;
+  color: #eef2f8;
+  text-align: center;
+}
+.mf-hub > strong { font-size: 13.5px; }
+.mf-hub-amount { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mf-hub-note { color: #d9a521; font-size: 12px; }
+.mf-hub-note.over { color: #ff8a80; }
+
+.mf-fan { position: relative; width: 100%; height: 16px; }
+.mf-fan::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  background: var(--line);
+}
+/* Pfeil, wenn es keinen Fächer gibt (gestapelte Ansicht) */
+.mf-fan::after {
+  content: "";
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--line);
+}
+
+.mf-rail {
+  position: absolute;
+  bottom: 0;
+  left: var(--rail-left, 25%);
+  right: var(--rail-right, 25%);
+  height: 2px;
+  background: var(--line);
+}
+
+.mf-targets {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.mf-target {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 9px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--tint, var(--c-rest));
+  border-radius: 10px;
+  text-align: center;
+}
+
+.mf-target::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 12px;
+  background: var(--line);
+}
+.mf-target::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--line);
+}
+
+.mf-name { font-size: 12.5px; overflow-wrap: anywhere; }
+.mf-amount { font-size: 15px; font-variant-numeric: tabular-nums; }
+.mf-share { color: var(--text-dim); font-size: 11.5px; }
+
+/* Gestapelt: kein Fächer, dafür ein Pfeil und farbige Kanten links. */
+.moneyflow.stacked .mf-rail,
+.moneyflow.stacked .mf-target::before,
+.moneyflow.stacked .mf-target::after { display: none; }
+
+.moneyflow.stacked .mf-fan::after { display: block; }
+.moneyflow.stacked .mf-targets {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: 10px;
+}
+.moneyflow.stacked .mf-target {
+  align-items: flex-start;
+  text-align: left;
+  border-top: 1px solid var(--line);
+  border-left: 3px solid var(--tint, var(--c-rest));
+}
+
+.moneyflow.empty .mf-fan { display: none; }
+.moneyflow.empty .hint { margin-top: 14px; }
 
 /* ---------- Balken ---------- */
 
@@ -312,6 +590,46 @@ main {
 }
 
 .row:last-child { border-bottom: 0; }
+
+/* ---------- Konto mit ausklappbarem Bereich ---------- */
+
+.bucket-item { border-bottom: 1px solid var(--line); }
+.bucket-item:last-child { border-bottom: 0; }
+.bucket-item .row.bucket { border-bottom: 0; }
+
+.sub-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 3px 9px 3px 6px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.sub-toggle:hover { color: var(--text); border-color: var(--accent); }
+.sub-toggle .chev { transition: transform .15s ease; }
+.sub-toggle.open .chev { transform: rotate(90deg); }
+
+.bucket-sub {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.bucket-sub .fixed .row { border-color: color-mix(in srgb, var(--line) 65%, transparent); }
+.bucket-sub input, .bucket-sub select { background: var(--surface); }
+.fixed-block .card-head { margin-bottom: 10px; }
+.fallback-note { margin: 0 0 14px; }
 
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .muted { color: var(--text-dim); }
@@ -746,12 +1064,35 @@ input[disabled] { opacity: .45; }
 
 /* ---------- Mobil ---------- */
 
+@media (max-width: 760px) {
+  /* Für den Fächer ist zu wenig Platz – untereinander liest es sich besser. */
+  .mf-rail, .mf-target::before, .mf-target::after { display: none; }
+  .mf-fan::after { display: block; }
+  .mf-targets {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin-top: 10px;
+  }
+  .mf-target {
+    align-items: flex-start;
+    text-align: left;
+    border-top: 1px solid var(--line);
+    border-left: 3px solid var(--tint, var(--c-rest));
+  }
+  .mf-hub { width: 100%; }
+
+  .summary-grid { grid-template-columns: 1fr; gap: 16px; }
+  .intro-head { flex-direction: column; gap: 6px; }
+  .credit { text-align: left; }
+  .card-note { display: none; }
+}
+
 @media (max-width: 820px) {
   /* Auf kleinen Displays braucht die Kopfzeile zwei Zeilen – dann lieber mitscrollen. */
   .topbar { position: static; }
   .topbar-inner { padding: 12px 16px; }
   main { padding: var(--gap) 16px 48px; }
   .card { padding: 16px; }
+  .bucket-sub { padding: 12px; }
 
   .buckets .row, .fixed .row, .wallets .row { grid-template-columns: 1fr 1fr; }
   .row.head { display: none; }
@@ -819,35 +1160,118 @@ input[disabled] { opacity: .45; }
   <main>
     <!-- ============================ Privates Kontomodell ============================ -->
     <div id="panel-privat" role="tabpanel" aria-labelledby="tab-privat" class="panel" data-panel="privat">
+      <!-- ---------------------------- Einstieg ---------------------------- -->
+      <section class="card intro" aria-labelledby="intro-title">
+        <div class="intro-head">
+          <div>
+            <p class="kicker">Mehrkonten-Modell</p>
+            <h2 id="intro-title" class="plain">So funktioniert es</h2>
+          </div>
+          <p class="credit">nach der Folge von<br><strong>Der Bitcoin Podcast</strong> · Florian Bruce</p>
+        </div>
+
+        <a class="video-link" href="https://www.youtube.com/watch?v=y0x3zknAink"
+           target="_blank" rel="noopener noreferrer">
+          <span class="video-mark" aria-hidden="true">▶</span>
+          <span class="video-text">
+            <strong>Kontenmodell erklärt</strong>
+            <span>Zur Erklärung des Kontenmodells kannst du dieses Video ansehen.</span>
+          </span>
+          <span class="video-go" aria-hidden="true">→</span>
+        </a>
+
+        <ol class="intro-steps">
+          <li>
+            <strong>Einkommen eintragen</strong>
+            <span>Oben rechts das monatliche Netto – alles Weitere rechnet sich daraus.</span>
+          </li>
+          <li>
+            <strong>Fixkosten sammeln</strong>
+            <span>Beim Konto „Fixkosten" aufklappen; Jahres- und Quartalsbeträge werden auf den Monat umgelegt.</span>
+          </li>
+          <li>
+            <strong>Konten verteilen</strong>
+            <span>Prozent oder fester Betrag. Was übrig bleibt, liegt als Puffer auf der Hausbank.</span>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ---------------------------- Übersicht ---------------------------- -->
       <section class="card summary" aria-labelledby="summary-title">
-        <h2 id="summary-title">Übersicht</h2>
+        <div class="card-head">
+          <h2 id="summary-title">Übersicht</h2>
+          <span class="card-note">automatisch berechnet</span>
+        </div>
 
-        <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+        <div class="summary-grid">
+          <figure class="donut">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Verteilung des Einkommens auf die Konten">
+              <g data-role="donut-ring" transform="rotate(-90 60 60)"></g>
+            </svg>
+            <figcaption>
+              <span>Einkommen</span>
+              <strong data-role="donut-total">–</strong>
+            </figcaption>
+          </figure>
 
-        <dl class="totals">
-          <div>
-            <dt>Zugeteilt</dt>
-            <dd data-role="total-allocated">–</dd>
+          <div class="summary-side">
+            <div class="bar" id="bar" role="img" aria-label="Aufteilung des Einkommens"></div>
+
+            <dl class="totals">
+              <div>
+                <dt>Zugeteilt</dt>
+                <dd data-role="total-allocated">–</dd>
+              </div>
+              <div>
+                <dt>Fixkosten (monatlich)</dt>
+                <dd data-role="total-fixed">–</dd>
+              </div>
+              <div>
+                <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
+                <dd data-role="total-rest">–</dd>
+              </div>
+              <div>
+                <dt>Fixkostenquote</dt>
+                <dd data-role="fixed-rate">–</dd>
+              </div>
+              <div>
+                <dt>Konten</dt>
+                <dd data-role="bucket-count">–</dd>
+              </div>
+            </dl>
           </div>
-          <div>
-            <dt>Fixkosten (monatlich)</dt>
-            <dd data-role="total-fixed">–</dd>
-          </div>
-          <div>
-            <dt data-role="rest-label" title="Bleibt auf dem Geldeingangskonto liegen – Puffer für Kontogebühren">Rest auf Hausbank</dt>
-            <dd data-role="total-rest">–</dd>
-          </div>
-          <div>
-            <dt>Fixkostenquote</dt>
-            <dd data-role="fixed-rate">–</dd>
-          </div>
-          <div>
-            <dt>Konten</dt>
-            <dd data-role="bucket-count">–</dd>
-          </div>
-        </dl>
+        </div>
 
         <p class="hint" data-role="warning" hidden></p>
+      </section>
+
+      <!-- ---------------------------- Geldfluss ---------------------------- -->
+      <section class="card" aria-labelledby="moneyflow-title">
+        <div class="card-head">
+          <h2 id="moneyflow-title">Geldfluss</h2>
+          <span class="card-note">so wandert dein Geld vom Eingang auf die Konten</span>
+        </div>
+
+        <div class="moneyflow" data-role="moneyflow">
+          <div class="mf-income">
+            <span>Einkommen (netto)</span>
+            <strong data-role="mf-income">–</strong>
+          </div>
+
+          <div class="mf-drop" aria-hidden="true"></div>
+
+          <div class="mf-hub">
+            <strong>Geldeingang · Hausbank</strong>
+            <span class="mf-hub-amount" data-role="mf-hub-amount">–</span>
+            <span class="mf-hub-note" data-role="mf-hub-note">–</span>
+          </div>
+
+          <div class="mf-fan" aria-hidden="true"><span class="mf-rail"></span></div>
+
+          <div class="mf-targets" data-role="mf-targets"></div>
+
+          <p class="hint" data-role="mf-empty" hidden>Noch keine Konten angelegt.</p>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="buckets-title">
@@ -871,25 +1295,39 @@ input[disabled] { opacity: .45; }
 
         <p class="hint">
           <strong>Prozent</strong> = Anteil vom Einkommen · <strong>Fester Betrag</strong> = feste Summe ·
-          <strong>Fixkosten</strong> = Summe aller Fixkosten unten · <strong>Rest</strong> = was übrig bleibt.
+          <strong>Fixkosten</strong> = Summe der Positionen im aufklappbaren Bereich · <strong>Rest</strong> = was übrig bleibt.
         </p>
       </section>
 
-      <section class="card" aria-labelledby="fixed-title">
-        <div class="card-head">
-          <h2 id="fixed-title">Fixkosten</h2>
-          <button type="button" class="btn" data-action="add-fixed">+ Position</button>
-        </div>
+      <!-- Der Fixkosten-Block hängt normalerweise im Konto „Fixkosten"; steht kein
+           Konto auf diesem Modus, nimmt ihn diese Karte auf. -->
+      <section class="card" id="fixed-fallback" aria-labelledby="fixed-title" hidden>
+        <p class="hint fallback-note">
+          Kein Konto steht auf „Fixkosten" – die Positionen stehen deshalb hier.
+        </p>
+        <div id="fixed-host">
+          <div class="fixed-block" id="fixed-block">
+            <div class="card-head">
+              <h2 id="fixed-title">Fixkosten</h2>
+              <button type="button" class="btn" data-action="add-fixed">+ Position</button>
+            </div>
 
-        <div class="table fixed" id="fixed">
-          <div class="row head" aria-hidden="true">
-            <span>Position</span>
-            <span class="num">Betrag</span>
-            <span>Turnus</span>
-            <span class="num">pro Monat</span>
-            <span></span>
+            <div class="table fixed" id="fixed">
+              <div class="row head" aria-hidden="true">
+                <span>Position</span>
+                <span class="num">Betrag</span>
+                <span>Turnus</span>
+                <span class="num">pro Monat</span>
+                <span></span>
+              </div>
+              <div id="fixed-rows"></div>
+            </div>
+
+            <p class="hint">
+              Turnus wählen – Quartals-, Halbjahres- und Jahresbeträge rechnet die Seite
+              auf den Monat herunter.
+            </p>
           </div>
-          <div id="fixed-rows"></div>
         </div>
       </section>
     </div>
@@ -1086,7 +1524,7 @@ input[disabled] { opacity: .45; }
       <section class="card" aria-labelledby="setup-title">
         <h2 id="setup-title">In vier Schritten einrichten</h2>
         <ol class="numbered">
-          <li><strong>Fixkosten sammeln.</strong> Im Tab <em>Privat</em> unten eintragen, Turnus wählen – die Monatswerte rechnet die Seite aus.</li>
+          <li><strong>Fixkosten sammeln.</strong> Im Tab <em>Privat</em> beim Konto <em>Fixkosten</em> aufklappen, Turnus wählen – die Monatswerte rechnet die Seite aus.</li>
           <li><strong>Konten festlegen.</strong> Beträge oder Prozente so lange verschieben, bis die Aufteilung zum eigenen Leben passt.</li>
           <li><strong>Konten eröffnen.</strong> Daueraufträge auf den Tag nach dem Gehaltseingang legen, damit die Verteilung von allein läuft.</li>
           <li><strong>Nach zwei bis drei Monaten nachjustieren.</strong> Meist ist das Lifestyle-Konto zu knapp oder die Risikorücklage zu niedrig.</li>
@@ -1132,8 +1570,9 @@ input[disabled] { opacity: .45; }
           wofür dein Geld da sein soll – und hältst dich anschließend nicht mehr selbst auf.
         </p>
         <p class="hint">
-          Inhaltlich zusammengefasst aus der Folge zum Kontenmodell von „Der Bitcoin Podcast"
-          (Florian Bruce). Keine Finanz- oder Steuerberatung.
+          Inhaltlich zusammengefasst aus der
+          <a href="https://www.youtube.com/watch?v=y0x3zknAink" target="_blank" rel="noopener noreferrer">Folge zum Kontenmodell</a>
+          von „Der Bitcoin Podcast" (Florian Bruce). Keine Finanz- oder Steuerberatung.
         </p>
       </section>
     </div>
@@ -1328,32 +1767,41 @@ input[disabled] { opacity: .45; }
   </aside>
 
   <template id="tpl-bucket">
-    <div class="row bucket">
-      <span class="name-cell">
-        <span class="swatch" data-role="swatch"></span>
-        <span class="name-stack">
-          <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
-          <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
+    <div class="bucket-item">
+      <div class="row bucket">
+        <span class="name-cell">
+          <span class="swatch" data-role="swatch"></span>
+          <span class="name-stack">
+            <input type="text" data-field="name" placeholder="Kontoname" autocomplete="off">
+            <input type="text" data-field="note" class="note" placeholder="Notiz" autocomplete="off">
+            <button type="button" class="sub-toggle" data-action="toggle-fixed" aria-expanded="false" hidden>
+              <span class="chev" aria-hidden="true">▸</span>
+              <span data-role="sub-label">Fixkosten</span>
+            </button>
+          </span>
         </span>
-      </span>
-      <span>
-        <select data-field="mode">
-          <option value="percent">Prozent</option>
-          <option value="fixed">Fester Betrag</option>
-          <option value="linked">Fixkosten</option>
-          <option value="rest">Rest</option>
-        </select>
-      </span>
-      <span class="value-cell">
-        <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
-        <span class="unit" data-role="value-unit"></span>
-      </span>
-      <span class="num" data-role="monthly">–</span>
-      <span class="num muted" data-role="share">–</span>
-      <span class="num muted" data-role="yearly">–</span>
-      <span class="row-actions">
-        <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
-      </span>
+        <span>
+          <select data-field="mode">
+            <option value="percent">Prozent</option>
+            <option value="fixed">Fester Betrag</option>
+            <option value="linked">Fixkosten</option>
+            <option value="rest">Rest</option>
+          </select>
+        </span>
+        <span class="value-cell">
+          <input type="text" inputmode="decimal" data-field="value" autocomplete="off">
+          <span class="unit" data-role="value-unit"></span>
+        </span>
+        <span class="num" data-role="monthly">–</span>
+        <span class="num muted" data-role="share">–</span>
+        <span class="num muted" data-role="yearly">–</span>
+        <span class="row-actions">
+          <button type="button" class="icon" data-action="remove-bucket" aria-label="Konto entfernen">✕</button>
+        </span>
+      </div>
+
+      <!-- nimmt bei „Fixkosten" den ausklappbaren Fixkosten-Block auf -->
+      <div class="bucket-sub" data-role="sub" hidden></div>
     </div>
   </template>
 
@@ -1460,8 +1908,8 @@ const WALLET_PALETTE = [
 const DEFAULT_DATA = {
   income: 3000,
   buckets: [
-    { id: 'pnm45j3', name: 'Risikorücklage', note: 'Notgroschen (Zugang erschwert)', mode: 'percent', value: 10, color: 'var(--c-risiko)' },
     { id: '6rshdhj', name: 'Fixkosten', note: 'Miete, Versicherungen, Abos', mode: 'linked', value: 0, color: 'var(--c-fix)' },
+    { id: 'pnm45j3', name: 'Risikorücklage', note: 'Notgroschen (Zugang erschwert)', mode: 'percent', value: 10, color: 'var(--c-risiko)' },
     { id: '03tbe8u', name: 'Lifestyle', note: 'Einkaufen, Spaß · N26', mode: 'percent', value: 20, color: 'var(--c-lifestyle)' },
     { id: 'nmovvh1', name: 'Urlaub', note: 'Reisekasse', mode: 'percent', value: 5, color: 'var(--c-urlaub)' },
     { id: 'qr0ws1l', name: 'Investment', note: 'ETF / Sparplan', mode: 'percent', value: 15, color: 'var(--c-invest)' },
@@ -1546,14 +1994,19 @@ function normalize(raw) {
 
   return {
     income: Math.max(0, parseNum(data.income)),
-    buckets: buckets.map((b, i) => ({
-      id: b?.id || newId(),
-      name: String(b?.name ?? ''),
-      note: String(b?.note ?? ''),
-      mode: MODES.includes(b?.mode) ? b.mode : 'percent',
-      value: Math.max(0, parseNum(b?.value)),
-      color: b?.color || PALETTE[i % PALETTE.length],
-    })),
+    buckets: buckets
+      .map((b, i) => ({
+        id: b?.id || newId(),
+        name: String(b?.name ?? ''),
+        note: String(b?.note ?? ''),
+        mode: MODES.includes(b?.mode) ? b.mode : 'percent',
+        value: Math.max(0, parseNum(b?.value)),
+        color: b?.color || PALETTE[i % PALETTE.length],
+      }))
+      /* Das Fixkostenkonto steht vorn: Es trägt die Fixkostenliste und ist der
+         Posten, an dem sich alles andere ausrichtet. Sort ist stabil, die
+         übrige Reihenfolge bleibt also erhalten. */
+      .sort((a, b) => (a.mode === 'linked' ? 0 : 1) - (b.mode === 'linked' ? 0 : 1)),
     fixedCosts: fixedCosts.map((f) => ({
       id: f?.id || newId(),
       name: String(f?.name ?? ''),
@@ -1678,14 +2131,16 @@ function applyMode(row, bucket) {
 }
 
 function buildBucketRow(bucket) {
-  const row = tplBucket.content.firstElementChild.cloneNode(true);
+  const item = tplBucket.content.firstElementChild.cloneNode(true);
+  const row = $('.row.bucket', item);
+  item.dataset.id = bucket.id;
   row.dataset.id = bucket.id;
   $('[data-role="swatch"]', row).style.setProperty('--swatch', bucket.color);
   $('[data-field="name"]', row).value = bucket.name;
   $('[data-field="note"]', row).value = bucket.note;
   $('[data-field="mode"]', row).value = bucket.mode;
   applyMode(row, bucket);
-  return row;
+  return item;
 }
 
 function buildFixedRow(item) {
@@ -1704,6 +2159,73 @@ function renderRows() {
   renderBitcoinRows();
 }
 
+/* ---------- Fixkosten als Untermenü im Konto ---------- */
+
+/* Der Fixkosten-Block ist ein einziger Knoten, der zwischen dem Konto im Modus
+   „Fixkosten" und der Ersatzkarte hin- und herwandert. So bleiben Zustand und
+   Ereignisbindungen erhalten – ein Neuaufbau würde beides verlieren. */
+
+const FIXED_OPEN_KEY = 'kontenmodell.fixkosten-offen';
+
+const fixedBlock = $('#fixed-block');
+const fixedFallback = $('#fixed-fallback');
+const fixedHost = $('#fixed-host');
+
+let fixedOpen = false;
+try {
+  fixedOpen = localStorage.getItem(FIXED_OPEN_KEY) === '1';
+} catch { /* ohne Speicher startet der Bereich zugeklappt */ }
+
+/** Sucht die Zeile, in der der Fixkosten-Block hängen soll. */
+function subPanelOf(bucketId) {
+  for (const item of bucketRows.children) {
+    if (item.dataset.id === bucketId) return $('[data-role="sub"]', item);
+  }
+  return null;
+}
+
+function placeFixedBlock() {
+  const linked = state.buckets.find((b) => b.mode === 'linked');
+  const host = (linked && subPanelOf(linked.id)) || null;
+
+  /* Nur umhängen, wenn es wirklich nötig ist – ein Verschieben im DOM würde
+     sonst bei jeder Eingabe den Fokus aus dem Feld reißen. */
+  if (host) {
+    if (fixedBlock.parentElement !== host) host.appendChild(fixedBlock);
+    fixedFallback.hidden = true;
+  } else {
+    if (fixedBlock.parentElement !== fixedHost) fixedHost.appendChild(fixedBlock);
+    fixedFallback.hidden = false;
+  }
+
+  for (const item of bucketRows.children) {
+    const sub = $('[data-role="sub"]', item);
+    $('.sub-toggle', item).hidden = sub !== host;
+  }
+
+  applyFixedOpen();
+}
+
+function applyFixedOpen() {
+  for (const item of bucketRows.children) {
+    const sub = $('[data-role="sub"]', item);
+    const toggle = $('.sub-toggle', item);
+    const offen = sub.contains(fixedBlock) && fixedOpen;
+
+    sub.hidden = !offen;
+    toggle.setAttribute('aria-expanded', String(offen));
+    toggle.classList.toggle('open', offen);
+  }
+}
+
+function toggleFixed() {
+  fixedOpen = !fixedOpen;
+  try {
+    localStorage.setItem(FIXED_OPEN_KEY, fixedOpen ? '1' : '0');
+  } catch { /* ohne Speicher bleibt es bei dieser Sitzung */ }
+  applyFixedOpen();
+}
+
 /* ---------- Berechnete Werte aktualisieren ---------- */
 
 const bar = $('#bar');
@@ -1712,13 +2234,20 @@ const warning = $('[data-role="warning"]');
 function refresh() {
   const result = compute();
 
-  for (const row of bucketRows.children) {
+  for (const row of bucketRows.querySelectorAll('.row.bucket')) {
     const amount = result.amounts.get(row.dataset.id) ?? 0;
     $('[data-role="monthly"]', row).textContent = fmtEUR(amount);
     $('[data-role="share"]', row).textContent =
       result.income > 0 ? fmtPct((amount / result.income) * 100) : '–';
     $('[data-role="yearly"]', row).textContent = fmtEUR(amount * 12);
   }
+
+  const positionen = state.fixedCosts.length;
+  for (const label of bucketRows.querySelectorAll('[data-role="sub-label"]')) {
+    label.textContent =
+      `${positionen} ${positionen === 1 ? 'Position' : 'Positionen'} · ${fmtEUR(result.fixedMonthly)} pro Monat`;
+  }
+  placeFixedBlock();
 
   for (const row of fixedRows.children) {
     const item = fixedById(row.dataset.id);
@@ -1767,7 +2296,8 @@ function paintBar(el, parts, scale, over) {
   el.classList.toggle('over', Boolean(over));
 }
 
-function renderBar(result, over) {
+/** Die Aufteilung als Liste – Grundlage für Balken, Torte und Geldfluss. */
+function distributionParts(result) {
   const parts = state.buckets.map((b) => ({
     amount: result.amounts.get(b.id) ?? 0,
     color: b.color,
@@ -1781,8 +2311,141 @@ function renderBar(result, over) {
     faded: true,
   });
 
-  paintBar(bar, parts, Math.max(result.income, result.allocated), over);
+  return parts;
+}
+
+function renderBar(result, over) {
+  const parts = distributionParts(result);
+  const scale = Math.max(result.income, result.allocated);
+
+  paintBar(bar, parts, scale, over);
+  renderDonut(parts, scale);
+  renderFlow(result, over);
   if (walletRows.children.length) refreshBitcoin();
+}
+
+/* ---------- Torte ---------- */
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const DONUT_R = 52;
+const DONUT_C = 2 * Math.PI * DONUT_R;
+
+const donutRing = $('[data-role="donut-ring"]');
+
+/** Ein Ringabschnitt: sichtbarer Strich der Länge „anteil", davor „versatz". */
+function donutSegment(part, anteil, versatz) {
+  const circle = document.createElementNS(SVG_NS, 'circle');
+  circle.setAttribute('cx', '60');
+  circle.setAttribute('cy', '60');
+  circle.setAttribute('r', String(DONUT_R));
+  circle.setAttribute('fill', 'none');
+  circle.setAttribute('stroke-width', '15');
+  circle.setAttribute('stroke-dasharray', `${anteil * DONUT_C} ${DONUT_C}`);
+  circle.setAttribute('stroke-dashoffset', String(-versatz * DONUT_C));
+
+  /* Über style, damit var(--c-…) sicher aufgelöst wird. */
+  circle.style.stroke = part.color;
+  if (part.faded) circle.style.opacity = '.35';
+
+  const title = document.createElementNS(SVG_NS, 'title');
+  title.textContent = part.amount > 0 ? `${part.label}: ${fmtEUR(part.amount)}` : part.label;
+  circle.appendChild(title);
+
+  return circle;
+}
+
+function renderDonut(parts, scale) {
+  const segments = [];
+  let versatz = 0;
+
+  if (scale > 0) {
+    for (const part of parts) {
+      if (part.amount <= 0.005) continue;
+      const anteil = Math.min(1, part.amount / scale);
+      segments.push(donutSegment(part, anteil, versatz));
+      versatz += anteil;
+    }
+  }
+
+  if (!segments.length) {
+    segments.push(donutSegment({ color: 'var(--surface-2)', label: 'noch nichts verteilt' }, 1, 0));
+  }
+
+  donutRing.replaceChildren(...segments);
+  $('[data-role="donut-total"]').textContent = fmtEUR(scale);
+}
+
+/* ---------- Geldfluss ---------- */
+
+/* Ab so vielen Konten wird die Fächer-Darstellung zu eng – dann untereinander. */
+const FLOW_MAX_COLUMNS = 7;
+
+const flowRoot = $('[data-role="moneyflow"]');
+const flowTargets = $('[data-role="mf-targets"]');
+const flowFan = $('.mf-fan');
+const flowEmpty = $('[data-role="mf-empty"]');
+
+function flowCard(bucket, amount, income) {
+  const el = document.createElement('div');
+  el.className = 'mf-target';
+  el.style.setProperty('--tint', bucket.color);
+
+  const name = document.createElement('span');
+  name.className = 'mf-name';
+  name.textContent = bucket.name || 'Konto';
+
+  const value = document.createElement('strong');
+  value.className = 'mf-amount';
+  value.textContent = fmtEUR(amount);
+
+  const share = document.createElement('span');
+  share.className = 'mf-share';
+  share.textContent = income > 0 ? fmtPct((amount / income) * 100) : '–';
+
+  el.append(name, value, share);
+  return el;
+}
+
+function renderFlow(result, over) {
+  $('[data-role="mf-income"]').textContent = fmtEUR(result.income);
+  $('[data-role="mf-hub-amount"]').textContent = fmtEUR(result.income);
+
+  const note = $('[data-role="mf-hub-note"]');
+  note.textContent = over
+    ? `${fmtEUR(Math.abs(result.rest))} mehr verteilt als da ist`
+    : `Puffer bleibt hier: ${fmtEUR(Math.max(0, result.rest))}`;
+  note.classList.toggle('over', over);
+
+  const cards = state.buckets.map((b) =>
+    flowCard(b, result.amounts.get(b.id) ?? 0, result.income));
+
+  flowTargets.replaceChildren(...cards);
+  flowTargets.style.setProperty('--cols', String(Math.max(1, cards.length)));
+  flowRoot.classList.toggle('stacked', cards.length > FLOW_MAX_COLUMNS);
+  flowRoot.classList.toggle('empty', cards.length === 0);
+  flowEmpty.hidden = cards.length > 0;
+
+  measureRail();
+}
+
+/* Die Querlinie soll genau von der Mitte der ersten bis zur Mitte der letzten
+   Karte laufen – das hängt an der tatsächlichen Breite, also wird gemessen. */
+function measureRail() {
+  const first = flowTargets.firstElementChild;
+  const last = flowTargets.lastElementChild;
+  if (!first || !last) return;
+
+  const box = flowTargets.getBoundingClientRect();
+  if (!box.width) return; /* Panel ausgeblendet – später erneut messen */
+
+  const a = first.getBoundingClientRect();
+  const b = last.getBoundingClientRect();
+  flowFan.style.setProperty('--rail-left', `${a.left + a.width / 2 - box.left}px`);
+  flowFan.style.setProperty('--rail-right', `${box.right - (b.left + b.width / 2)}px`);
+}
+
+if ('ResizeObserver' in window) {
+  new ResizeObserver(measureRail).observe(flowTargets);
 }
 
 /* ============================ Bitcoin-Modell ============================ */
@@ -2110,6 +2773,9 @@ function showTab(name) {
     panel.hidden = panel.dataset.panel !== target;
   }
 
+  /* Im ausgeblendeten Panel ist nichts messbar – jetzt schon. */
+  if (target === 'privat') measureRail();
+
   try {
     localStorage.setItem(TAB_KEY, target);
   } catch { /* ohne Speicher läuft die Seite trotzdem */ }
@@ -2185,6 +2851,8 @@ document.addEventListener('click', (event) => {
     save();
     renderRows();
   }
+
+  if (action === 'toggle-fixed') toggleFixed();
 
   if (action === 'export') exportJson();
   if (action === 'import') $('#import-file').click();

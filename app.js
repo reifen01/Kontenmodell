@@ -51,8 +51,8 @@ const WALLET_PALETTE = [
 const DEFAULT_DATA = {
   income: 3000,
   buckets: [
-    { id: 'pnm45j3', name: 'Risikorücklage', note: 'Notgroschen (Zugang erschwert)', mode: 'percent', value: 10, color: 'var(--c-risiko)' },
     { id: '6rshdhj', name: 'Fixkosten', note: 'Miete, Versicherungen, Abos', mode: 'linked', value: 0, color: 'var(--c-fix)' },
+    { id: 'pnm45j3', name: 'Risikorücklage', note: 'Notgroschen (Zugang erschwert)', mode: 'percent', value: 10, color: 'var(--c-risiko)' },
     { id: '03tbe8u', name: 'Lifestyle', note: 'Einkaufen, Spaß · N26', mode: 'percent', value: 20, color: 'var(--c-lifestyle)' },
     { id: 'nmovvh1', name: 'Urlaub', note: 'Reisekasse', mode: 'percent', value: 5, color: 'var(--c-urlaub)' },
     { id: 'qr0ws1l', name: 'Investment', note: 'ETF / Sparplan', mode: 'percent', value: 15, color: 'var(--c-invest)' },
@@ -137,14 +137,19 @@ function normalize(raw) {
 
   return {
     income: Math.max(0, parseNum(data.income)),
-    buckets: buckets.map((b, i) => ({
-      id: b?.id || newId(),
-      name: String(b?.name ?? ''),
-      note: String(b?.note ?? ''),
-      mode: MODES.includes(b?.mode) ? b.mode : 'percent',
-      value: Math.max(0, parseNum(b?.value)),
-      color: b?.color || PALETTE[i % PALETTE.length],
-    })),
+    buckets: buckets
+      .map((b, i) => ({
+        id: b?.id || newId(),
+        name: String(b?.name ?? ''),
+        note: String(b?.note ?? ''),
+        mode: MODES.includes(b?.mode) ? b.mode : 'percent',
+        value: Math.max(0, parseNum(b?.value)),
+        color: b?.color || PALETTE[i % PALETTE.length],
+      }))
+      /* Das Fixkostenkonto steht vorn: Es trägt die Fixkostenliste und ist der
+         Posten, an dem sich alles andere ausrichtet. Sort ist stabil, die
+         übrige Reihenfolge bleibt also erhalten. */
+      .sort((a, b) => (a.mode === 'linked' ? 0 : 1) - (b.mode === 'linked' ? 0 : 1)),
     fixedCosts: fixedCosts.map((f) => ({
       id: f?.id || newId(),
       name: String(f?.name ?? ''),
@@ -269,14 +274,16 @@ function applyMode(row, bucket) {
 }
 
 function buildBucketRow(bucket) {
-  const row = tplBucket.content.firstElementChild.cloneNode(true);
+  const item = tplBucket.content.firstElementChild.cloneNode(true);
+  const row = $('.row.bucket', item);
+  item.dataset.id = bucket.id;
   row.dataset.id = bucket.id;
   $('[data-role="swatch"]', row).style.setProperty('--swatch', bucket.color);
   $('[data-field="name"]', row).value = bucket.name;
   $('[data-field="note"]', row).value = bucket.note;
   $('[data-field="mode"]', row).value = bucket.mode;
   applyMode(row, bucket);
-  return row;
+  return item;
 }
 
 function buildFixedRow(item) {
@@ -295,6 +302,73 @@ function renderRows() {
   renderBitcoinRows();
 }
 
+/* ---------- Fixkosten als Untermenü im Konto ---------- */
+
+/* Der Fixkosten-Block ist ein einziger Knoten, der zwischen dem Konto im Modus
+   „Fixkosten" und der Ersatzkarte hin- und herwandert. So bleiben Zustand und
+   Ereignisbindungen erhalten – ein Neuaufbau würde beides verlieren. */
+
+const FIXED_OPEN_KEY = 'kontenmodell.fixkosten-offen';
+
+const fixedBlock = $('#fixed-block');
+const fixedFallback = $('#fixed-fallback');
+const fixedHost = $('#fixed-host');
+
+let fixedOpen = false;
+try {
+  fixedOpen = localStorage.getItem(FIXED_OPEN_KEY) === '1';
+} catch { /* ohne Speicher startet der Bereich zugeklappt */ }
+
+/** Sucht die Zeile, in der der Fixkosten-Block hängen soll. */
+function subPanelOf(bucketId) {
+  for (const item of bucketRows.children) {
+    if (item.dataset.id === bucketId) return $('[data-role="sub"]', item);
+  }
+  return null;
+}
+
+function placeFixedBlock() {
+  const linked = state.buckets.find((b) => b.mode === 'linked');
+  const host = (linked && subPanelOf(linked.id)) || null;
+
+  /* Nur umhängen, wenn es wirklich nötig ist – ein Verschieben im DOM würde
+     sonst bei jeder Eingabe den Fokus aus dem Feld reißen. */
+  if (host) {
+    if (fixedBlock.parentElement !== host) host.appendChild(fixedBlock);
+    fixedFallback.hidden = true;
+  } else {
+    if (fixedBlock.parentElement !== fixedHost) fixedHost.appendChild(fixedBlock);
+    fixedFallback.hidden = false;
+  }
+
+  for (const item of bucketRows.children) {
+    const sub = $('[data-role="sub"]', item);
+    $('.sub-toggle', item).hidden = sub !== host;
+  }
+
+  applyFixedOpen();
+}
+
+function applyFixedOpen() {
+  for (const item of bucketRows.children) {
+    const sub = $('[data-role="sub"]', item);
+    const toggle = $('.sub-toggle', item);
+    const offen = sub.contains(fixedBlock) && fixedOpen;
+
+    sub.hidden = !offen;
+    toggle.setAttribute('aria-expanded', String(offen));
+    toggle.classList.toggle('open', offen);
+  }
+}
+
+function toggleFixed() {
+  fixedOpen = !fixedOpen;
+  try {
+    localStorage.setItem(FIXED_OPEN_KEY, fixedOpen ? '1' : '0');
+  } catch { /* ohne Speicher bleibt es bei dieser Sitzung */ }
+  applyFixedOpen();
+}
+
 /* ---------- Berechnete Werte aktualisieren ---------- */
 
 const bar = $('#bar');
@@ -303,13 +377,20 @@ const warning = $('[data-role="warning"]');
 function refresh() {
   const result = compute();
 
-  for (const row of bucketRows.children) {
+  for (const row of bucketRows.querySelectorAll('.row.bucket')) {
     const amount = result.amounts.get(row.dataset.id) ?? 0;
     $('[data-role="monthly"]', row).textContent = fmtEUR(amount);
     $('[data-role="share"]', row).textContent =
       result.income > 0 ? fmtPct((amount / result.income) * 100) : '–';
     $('[data-role="yearly"]', row).textContent = fmtEUR(amount * 12);
   }
+
+  const positionen = state.fixedCosts.length;
+  for (const label of bucketRows.querySelectorAll('[data-role="sub-label"]')) {
+    label.textContent =
+      `${positionen} ${positionen === 1 ? 'Position' : 'Positionen'} · ${fmtEUR(result.fixedMonthly)} pro Monat`;
+  }
+  placeFixedBlock();
 
   for (const row of fixedRows.children) {
     const item = fixedById(row.dataset.id);
@@ -358,7 +439,8 @@ function paintBar(el, parts, scale, over) {
   el.classList.toggle('over', Boolean(over));
 }
 
-function renderBar(result, over) {
+/** Die Aufteilung als Liste – Grundlage für Balken, Torte und Geldfluss. */
+function distributionParts(result) {
   const parts = state.buckets.map((b) => ({
     amount: result.amounts.get(b.id) ?? 0,
     color: b.color,
@@ -372,8 +454,141 @@ function renderBar(result, over) {
     faded: true,
   });
 
-  paintBar(bar, parts, Math.max(result.income, result.allocated), over);
+  return parts;
+}
+
+function renderBar(result, over) {
+  const parts = distributionParts(result);
+  const scale = Math.max(result.income, result.allocated);
+
+  paintBar(bar, parts, scale, over);
+  renderDonut(parts, scale);
+  renderFlow(result, over);
   if (walletRows.children.length) refreshBitcoin();
+}
+
+/* ---------- Torte ---------- */
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const DONUT_R = 52;
+const DONUT_C = 2 * Math.PI * DONUT_R;
+
+const donutRing = $('[data-role="donut-ring"]');
+
+/** Ein Ringabschnitt: sichtbarer Strich der Länge „anteil", davor „versatz". */
+function donutSegment(part, anteil, versatz) {
+  const circle = document.createElementNS(SVG_NS, 'circle');
+  circle.setAttribute('cx', '60');
+  circle.setAttribute('cy', '60');
+  circle.setAttribute('r', String(DONUT_R));
+  circle.setAttribute('fill', 'none');
+  circle.setAttribute('stroke-width', '15');
+  circle.setAttribute('stroke-dasharray', `${anteil * DONUT_C} ${DONUT_C}`);
+  circle.setAttribute('stroke-dashoffset', String(-versatz * DONUT_C));
+
+  /* Über style, damit var(--c-…) sicher aufgelöst wird. */
+  circle.style.stroke = part.color;
+  if (part.faded) circle.style.opacity = '.35';
+
+  const title = document.createElementNS(SVG_NS, 'title');
+  title.textContent = part.amount > 0 ? `${part.label}: ${fmtEUR(part.amount)}` : part.label;
+  circle.appendChild(title);
+
+  return circle;
+}
+
+function renderDonut(parts, scale) {
+  const segments = [];
+  let versatz = 0;
+
+  if (scale > 0) {
+    for (const part of parts) {
+      if (part.amount <= 0.005) continue;
+      const anteil = Math.min(1, part.amount / scale);
+      segments.push(donutSegment(part, anteil, versatz));
+      versatz += anteil;
+    }
+  }
+
+  if (!segments.length) {
+    segments.push(donutSegment({ color: 'var(--surface-2)', label: 'noch nichts verteilt' }, 1, 0));
+  }
+
+  donutRing.replaceChildren(...segments);
+  $('[data-role="donut-total"]').textContent = fmtEUR(scale);
+}
+
+/* ---------- Geldfluss ---------- */
+
+/* Ab so vielen Konten wird die Fächer-Darstellung zu eng – dann untereinander. */
+const FLOW_MAX_COLUMNS = 7;
+
+const flowRoot = $('[data-role="moneyflow"]');
+const flowTargets = $('[data-role="mf-targets"]');
+const flowFan = $('.mf-fan');
+const flowEmpty = $('[data-role="mf-empty"]');
+
+function flowCard(bucket, amount, income) {
+  const el = document.createElement('div');
+  el.className = 'mf-target';
+  el.style.setProperty('--tint', bucket.color);
+
+  const name = document.createElement('span');
+  name.className = 'mf-name';
+  name.textContent = bucket.name || 'Konto';
+
+  const value = document.createElement('strong');
+  value.className = 'mf-amount';
+  value.textContent = fmtEUR(amount);
+
+  const share = document.createElement('span');
+  share.className = 'mf-share';
+  share.textContent = income > 0 ? fmtPct((amount / income) * 100) : '–';
+
+  el.append(name, value, share);
+  return el;
+}
+
+function renderFlow(result, over) {
+  $('[data-role="mf-income"]').textContent = fmtEUR(result.income);
+  $('[data-role="mf-hub-amount"]').textContent = fmtEUR(result.income);
+
+  const note = $('[data-role="mf-hub-note"]');
+  note.textContent = over
+    ? `${fmtEUR(Math.abs(result.rest))} mehr verteilt als da ist`
+    : `Puffer bleibt hier: ${fmtEUR(Math.max(0, result.rest))}`;
+  note.classList.toggle('over', over);
+
+  const cards = state.buckets.map((b) =>
+    flowCard(b, result.amounts.get(b.id) ?? 0, result.income));
+
+  flowTargets.replaceChildren(...cards);
+  flowTargets.style.setProperty('--cols', String(Math.max(1, cards.length)));
+  flowRoot.classList.toggle('stacked', cards.length > FLOW_MAX_COLUMNS);
+  flowRoot.classList.toggle('empty', cards.length === 0);
+  flowEmpty.hidden = cards.length > 0;
+
+  measureRail();
+}
+
+/* Die Querlinie soll genau von der Mitte der ersten bis zur Mitte der letzten
+   Karte laufen – das hängt an der tatsächlichen Breite, also wird gemessen. */
+function measureRail() {
+  const first = flowTargets.firstElementChild;
+  const last = flowTargets.lastElementChild;
+  if (!first || !last) return;
+
+  const box = flowTargets.getBoundingClientRect();
+  if (!box.width) return; /* Panel ausgeblendet – später erneut messen */
+
+  const a = first.getBoundingClientRect();
+  const b = last.getBoundingClientRect();
+  flowFan.style.setProperty('--rail-left', `${a.left + a.width / 2 - box.left}px`);
+  flowFan.style.setProperty('--rail-right', `${box.right - (b.left + b.width / 2)}px`);
+}
+
+if ('ResizeObserver' in window) {
+  new ResizeObserver(measureRail).observe(flowTargets);
 }
 
 /* ============================ Bitcoin-Modell ============================ */
@@ -701,6 +916,9 @@ function showTab(name) {
     panel.hidden = panel.dataset.panel !== target;
   }
 
+  /* Im ausgeblendeten Panel ist nichts messbar – jetzt schon. */
+  if (target === 'privat') measureRail();
+
   try {
     localStorage.setItem(TAB_KEY, target);
   } catch { /* ohne Speicher läuft die Seite trotzdem */ }
@@ -776,6 +994,8 @@ document.addEventListener('click', (event) => {
     save();
     renderRows();
   }
+
+  if (action === 'toggle-fixed') toggleFixed();
 
   if (action === 'export') exportJson();
   if (action === 'import') $('#import-file').click();

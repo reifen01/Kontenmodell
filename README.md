@@ -18,6 +18,19 @@ lokalen Server:
 npx http-server . -p 8080   # danach http://localhost:8080
 ```
 
+## Aufbau des Privat-Tabs
+
+1. **Einstieg** – kurze Anleitung in drei Schritten und der Link zur
+   [Folge zum Kontenmodell](https://www.youtube.com/watch?v=y0x3zknAink),
+   auf der das Modell beruht.
+2. **Übersicht** – Ringdiagramm der Verteilung mit dem Einkommen in der Mitte,
+   daneben der gestapelte Balken und die Kennzahlen (zugeteilt, Fixkosten,
+   Rest, Fixkostenquote, Anzahl Konten).
+3. **Geldfluss** – Einkommen → Geldeingangskonto → Zweckkonten, jedes mit
+   Betrag und Anteil. Bis sieben Konten fächert die Darstellung auf; darüber
+   und auf schmalen Displays stehen die Konten untereinander.
+4. **Konten** – die Aufteilung selbst, das Fixkostenkonto immer an erster Stelle.
+
 ## Konten-Modi
 
 | Modus             | Bedeutung                                                  |
@@ -32,6 +45,13 @@ Fordern die Konten mehr als das Einkommen hergibt, wird die Überziehung in der
 Übersicht ausgewiesen.
 
 ## Fixkosten
+
+Die Fixkostenliste steckt im Konto, das auf dem Modus **Fixkosten** steht – dort
+klappt sie über die Schaltfläche unter dem Kontonamen auf, die zugleich Anzahl
+und Monatssumme anzeigt. Beim Laden rückt dieses Konto an die erste Stelle.
+Steht kein Konto auf diesem Modus, erscheint die Liste in einer eigenen Karte
+unter den Konten, damit sie erreichbar bleibt. Ob der Bereich offen ist, merkt
+sich die App (`kontenmodell.fixkosten-offen`).
 
 Jede Position hat einen Betrag und einen Turnus (monatlich, quartalsweise,
 halbjährlich, jährlich). Der Monatswert ergibt sich aus Betrag × Faktor
@@ -160,6 +180,7 @@ exportieren und wieder importieren:
 {
   "income": 3000,
   "buckets": [
+    { "id": "6rshdhj", "name": "Fixkosten", "note": "Miete, Versicherungen", "mode": "linked", "value": 0, "color": "var(--c-fix)" },
     { "id": "pnm45j3", "name": "Risikorücklage", "note": "Notgroschen", "mode": "percent", "value": 10, "color": "var(--c-risiko)" }
   ],
   "fixedCosts": [
